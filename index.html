@@ -213,6 +213,8 @@ tr:hover td{background:var(--sky);}
 
     <div class="sb-section">Documents</div>
     <div class="sb-item" onclick="showPage('knowledge')"><span class="si">📁</span>Knowledge Base</div>
+    <div class="sb-item" onclick="showPage('changelog')"><span class="si">📝</span>Change Log</div>
+    <div class="sb-item" onclick="showPage('changelog')"><span class="si">📝</span>Change Log</div>
   </div>
 
   <div id="main">
@@ -344,6 +346,33 @@ tr:hover td{background:var(--sky);}
   </div>
 </div>
 
+<!-- CHANGE LOG -->
+      <div id="page-changelog" class="page">
+        <div class="page-header"><span style="font-size:20px">📝</span><div><h2>Change Log</h2><p>บันทึกการเปลี่ยนแปลงระบบ IT ทั้งหมด</p></div></div>
+        <div class="toolbar">
+          <select class="filter-sel" id="f-cl-type" onchange="renderChangelog()"><option value="">ทุกประเภท</option><option>Hardware</option><option>Software</option><option>Network</option><option>Server</option><option>OS &amp; Patch</option><option>Config</option></select>
+          <select class="filter-sel" id="f-cl-risk" onchange="renderChangelog()"><option value="">ทุกระดับ</option><option>ต่ำ</option><option>กลาง</option><option>สูง</option><option>วิกฤต</option></select>
+          <div class="tb-sp"></div>
+          <button class="btn btn-ghost" onclick="openModal('changelog')">+ บันทึกการเปลี่ยนแปลง</button>
+        </div>
+        <div class="tbl-wrap"><table><thead id="changelog-head"></thead><tbody id="changelog-body"></tbody></table></div>
+        <div class="pagination" id="changelog-pg"></div>
+      </div>
+
+      
+      <!-- CHANGE LOG -->
+      <div id="page-changelog" class="page">
+        <div class="page-header"><span style="font-size:20px">📝</span><div><h2>Change Log</h2><p>บันทึกการเปลี่ยนแปลงระบบ IT ทั้งหมด</p></div></div>
+        <div class="toolbar">
+          <select class="filter-sel" id="f-cl-type" onchange="renderChangelog()"><option value="">ทุกประเภท</option><option>Hardware</option><option>Software</option><option>Network</option><option>Server</option><option>OS &amp; Patch</option><option>Config</option></select>
+          <select class="filter-sel" id="f-cl-risk" onchange="renderChangelog()"><option value="">ทุกระดับความเสี่ยง</option><option>ต่ำ</option><option>กลาง</option><option>สูง</option><option>วิกฤต</option></select>
+          <div class="tb-sp"></div>
+          <button class="btn btn-ghost" onclick="openModal('changelog')">+ บันทึกการเปลี่ยนแปลง</button>
+        </div>
+        <div class="tbl-wrap"><table><thead id="changelog-head"></thead><tbody id="changelog-body"></tbody></table></div>
+        <div class="pagination" id="changelog-pg"></div>
+      </div>
+
 <!-- MODAL -->
 <div id="modal-overlay" onclick="closeModal(event)">
   <div id="modal">
@@ -369,6 +398,8 @@ const SHEETS = {
   maintenance:{name:'🔩 Maintenance',startRow:4},security:{name:'🛡 Security',startRow:4},
   backup:{name:'💾 Backup',startRow:4},network:{name:'🌐 Network-IP',startRow:4},
   licenses:{name:'📜 Licenses',startRow:4},knowledge:{name:'📁 Knowledge',startRow:4},
+  changelog:{name:'📝 Change Log',startRow:4},
+  changelog:{name:'📝 Change Log',startRow:4},
 };
 let DATA={},paginations={},modalCtx=null;
 const PG=20;
@@ -397,7 +428,7 @@ async function loadAllData(){
 function renderAll(){
   renderDashboard();renderAssets();renderUsers();renderPasswords();
   renderHelpdesk();renderMaintenance();renderSecurity();renderBackup();
-  renderNetwork();renderLicenses();renderKnowledge();
+  renderNetwork();renderLicenses();renderKnowledge();renderChangelog();renderChangelog();
 }
 
 // DASHBOARD
@@ -556,6 +587,23 @@ function renderLicenses(){
     {idx:5,label:'วันซื้อ'},{idx:6,label:'วันหมดอายุ'},{idx:7,label:'ราคา/ปี',mono:true},{idx:8,label:'หมายเหตุ'},
   ],null,null);
 }
+
+function renderChangelog(){
+  const ft=document.getElementById('f-cl-type')?.value;
+  const fr=document.getElementById('f-cl-risk')?.value;
+  const riskCls={'ต่ำ':'bg','กลาง':'by','สูง':'br','วิกฤต':'br'};
+  const typeCls={'Hardware':'bb','Software':'bg','Network':'bn','Server':'by','OS & Patch':'bg','Config':'by'};
+  renderTable('changelog','changelog-head','changelog-body',[
+    {idx:0,label:'Change ID',mono:true},{idx:1,label:'วันที่'},{idx:2,label:'เวลา'},
+    {idx:3,label:'ประเภท',render:v=>`<span class="badge ${typeCls[v]||'bn'}">${v||'—'}</span>`},
+    {idx:4,label:'Asset ID',mono:true},{idx:5,label:'ชื่ออุปกรณ์/ระบบ'},
+    {idx:6,label:'รายละเอียด'},{idx:7,label:'สถานะก่อน'},{idx:8,label:'สถานะหลัง'},
+    {idx:9,label:'เหตุผล'},{idx:10,label:'ผลกระทบ'},
+    {idx:11,label:'ความเสี่ยง',render:v=>`<span class="badge ${riskCls[v]||'bn'}">${v||'—'}</span>`},
+    {idx:12,label:'ผู้ดำเนินการ'},{idx:13,label:'ผู้อนุมัติ'},{idx:14,label:'หมายเหตุ'},
+  ],r=>r.filter(row=>(!ft||row[3]===ft)&&(!fr||row[11]===fr)),'changelog');
+}
+
 function renderKnowledge(){
   renderTable('knowledge','knowledge-head','knowledge-body',[
     {idx:0,label:'Doc ID',mono:true},{idx:1,label:'หัวข้อ'},{idx:2,label:'หมวดหมู่'},
@@ -573,7 +621,7 @@ function aBadge(v){if(!v)return'—';const m={'ใช้งาน':'bg','ซ่�
 function ptBadge(v){if(!v)return'—';return(v.includes('Missing')||v.includes('ขาด'))?`<span class="badge br">${v}</span>`:`<span class="badge bg">${v}</span>`;}
 
 // NAV
-const TITLES={dashboard:'Dashboard',assets:'Assets & Devices',users:'User Directory',passwords:'Password Vault',helpdesk:'Helpdesk / Tickets',maintenance:'Maintenance Schedule',security:'Security Monitor',backup:'Backup Monitor',network:'Network & IP',licenses:'License Management',knowledge:'Knowledge Base'};
+const TITLES={dashboard:'Dashboard',assets:'Assets & Devices',users:'User Directory',passwords:'Password Vault',helpdesk:'Helpdesk / Tickets',maintenance:'Maintenance Schedule',security:'Security Monitor',backup:'Backup Monitor',network:'Network & IP',licenses:'License Management',knowledge:'Knowledge Base',changelog:'Change Log'};
 function showPage(n){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(s=>s.classList.remove('active'));
