@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IT Management — ESL/TSC</title>
+<title>IT Management Portal — ESL/TSC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sarabun:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -967,7 +967,7 @@ function renderDashboard(){
     <div class="chart-track"><div class="chart-fill" style="width:${(c/maxT*100).toFixed(0)}%;background:${colors[i%colors.length]}">${c}</div></div>
     <div class="chart-num">${c}</div></div>`).join('');
 
-  const dc={};u.forEach(r=>{const d=r[4]||'ไม่ระบุ';dc[d]=(dc[d]||0)+1;});
+  const dc={};u.forEach(r=>{const d=r[5]||'ไม่ระบุ';dc[d]=(dc[d]||0)+1;});
   const maxD=Math.max(...Object.values(dc),1);
   document.getElementById('chart-dept').innerHTML=Object.entries(dc).sort((a,b)=>b[1]-a[1]).slice(0,10)
     .map(([d,c],i)=>`<div class="chart-row"><div class="chart-lbl">${d}</div>
@@ -1037,14 +1037,14 @@ function renderAssets(){
 function renderUsers(){
   const fd=document.getElementById('f-user-dept')?.value,fs=document.getElementById('f-user-status')?.value;
   const rows=DATA.users?.rows||[];
-  const depts=[...new Set(rows.map(r=>r[4]).filter(Boolean))].sort();
+  const depts=[...new Set(rows.map(r=>r[5]).filter(Boolean))].sort();
   const df=document.getElementById('f-user-dept');
   if(df&&df.options.length<=1)depts.forEach(d=>{const o=document.createElement('option');o.value=o.textContent=d;df.appendChild(o);});
   renderTable('users','users-head','users-body',[
     {idx:0,label:'User ID',mono:true},{idx:1,label:'ชื่อ-นามสกุล'},{idx:2,label:'Username',mono:true},
-    {idx:3,label:'Email',mono:true},{idx:4,label:'แผนก'},{idx:5,label:'ตำแหน่ง'},
+    {idx:3,label:'Email',mono:true},{idx:5,label:'แผนก'},{idx:6,label:'ตำแหน่ง'},
     {idx:8,label:'สิทธิ์',render:v=>rBadge(v)},{idx:11,label:'สถานะ',render:v=>acBadge(v)},
-  ],r=>r.filter(row=>(!fd||row[4]===fd)&&(!fs||row[11]===fs)),'users');
+  ],r=>r.filter(row=>(!fd||row[5]===fd)&&(!fs||row[11]===fs)),'users');
 }
 function renderPasswords(){
   renderTable('passwords','passwords-head','passwords-body',[
