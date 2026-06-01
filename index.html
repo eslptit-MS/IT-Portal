@@ -676,6 +676,53 @@ tr:hover td { background: var(--surface-2); }
   .form-grid, .grid2 { grid-template-columns:1fr; }
   .kpi-grid { grid-template-columns:repeat(2,1fr); }
 }
+
+/* ── ADMIN MODE ── */
+.admin-only { display: none; }
+body.is-admin .admin-only { display: inline-flex; }
+.edit-btn {
+  background: var(--info-bg);
+  border: 1px solid rgba(29,78,171,.2);
+  border-radius: var(--r-sm);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--info-fg);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all .12s;
+  white-space: nowrap;
+}
+.edit-btn:hover { background: var(--info-fg); color: #fff; }
+.del-btn {
+  background: var(--err-bg);
+  border: 1px solid rgba(155,35,37,.2);
+  border-radius: var(--r-sm);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--err-fg);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all .12s;
+  white-space: nowrap;
+}
+.del-btn:hover { background: var(--err-fg); color: #fff; }
+.admin-bar {
+  display: none;
+  background: linear-gradient(135deg, #0D1E35, #1a3560);
+  border: 1px solid rgba(99,154,255,.3);
+  border-radius: var(--r-md);
+  padding: 8px 16px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: var(--sb-accent);
+  font-weight: 500;
+  align-items: center;
+  gap: 8px;
+}
+body.is-admin .admin-bar { display: flex; }
+
 </style>
 </head>
 <body>
@@ -734,6 +781,7 @@ tr:hover td { background: var(--surface-2); }
     </div>
 
     <div id="content">
+      <div class="admin-bar">🔐 Admin Mode — สามารถแก้ไขและลบข้อมูลได้ &nbsp;|&nbsp; URL: ?admin=tsc007esl</div>
 
       <!-- DASHBOARD -->
       <div id="page-dashboard" class="page active">
@@ -1004,10 +1052,15 @@ function renderTable(key,hId,bId,cols,filterFn,pgKey){
   if(q)rows=rows.filter(r=>r.some(c=>String(c).toLowerCase().includes(q)));
   const pg=paginations[pgKey]||1,total=rows.length,pages=Math.ceil(total/PG);
   const sl=rows.slice((pg-1)*PG,pg*PG);
-  document.getElementById(hId).innerHTML=`<tr>${cols.map(c=>`<th>${d.headers[c.idx]||c.label||''}</th>`).join('')}</tr>`;
+  const adminCols = isAdmin ? `<th class="admin-only" style="width:80px">จัดการ</th>` : '';
+  document.getElementById(hId).innerHTML=`<tr>${cols.map(c=>`<th>${d.headers[c.idx]||c.label||''}</th>`).join('')}${adminCols}</tr>`;
   document.getElementById(bId).innerHTML=sl.length
-    ?sl.map(r=>`<tr>${cols.map(c=>`<td class="${c.mono?'mono':''}">${c.render?c.render(r[c.idx]||'',r):(r[c.idx]||'—')}</td>`).join('')}</tr>`).join('')
-    :`<tr><td colspan="${cols.length}" class="empty">ไม่มีข้อมูล</td></tr>`;
+    ?sl.map((r,i)=>{
+      const globalIdx = (pg-1)*PG + i;
+      const adminCell = isAdmin ? `<td class="admin-only" style="white-space:nowrap;"><button class="edit-btn" onclick='editRow("${key}",${globalIdx},${JSON.stringify(d.headers)},${JSON.stringify(r)})'>✏️ แก้</button> <button class="del-btn" onclick='deleteRow("${key}",${globalIdx},"${(r[0]||'').replace(/'/g,"\'")}") '>🗑</button></td>` : '';
+      return `<tr>${cols.map(c=>`<td class="${c.mono?'mono':''}">${c.render?c.render(r[c.idx]||'',r):(r[c.idx]||'—')}</td>`).join('')}${adminCell}</tr>`;
+    }).join('')
+    :`<tr><td colspan="${cols.length + (isAdmin?1:0)}" class="empty">ไม่มีข้อมูล</td></tr>`;
   const pe=document.getElementById(`${key}-pg`);
   if(pe)pe.innerHTML=total>PG?`
     <span class="pg-info">${(pg-1)*PG+1}–${Math.min(pg*PG,total)} / ${total}</span>
@@ -1177,6 +1230,131 @@ async function saveModal(){
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='flex';
 })();
+
+// ── ADMIN MODE ──────────────────────────────────────────────
+const ADMIN_KEY = 'tsc007esl';
+const isAdmin = new URLSearchParams(window.location.search).get('admin') === ADMIN_KEY;
+if (isAdmin) document.body.classList.add('is-admin');
+
+// ── EDIT ROW ─────────────────────────────────────────────────
+async function editRow(sheetKey, rowIndex, headers, rowData) {
+  modalCtx = sheetKey;
+  const titles = {
+    assets:'แก้ไขอุปกรณ์', users:'แก้ไข User', passwords:'แก้ไข Password',
+    helpdesk:'แก้ไข Ticket', maintenance:'แก้ไขแผน PM', network:'แก้ไข IP',
+    knowledge:'แก้ไขเอกสาร', security:'แก้ไข Security', backup:'แก้ไข Backup',
+    licenses:'แก้ไข License', changelog:'แก้ไข Change Log'
+  };
+  document.getElementById('modal-title').textContent = titles[sheetKey] || 'แก้ไขข้อมูล';
+  document.getElementById('modal-body').innerHTML = `<div class="form-grid">${
+    headers.map((h, i) => `<div class="form-group">
+      <label class="form-label">${h}</label>
+      <input class="form-input" data-idx="${i}" value="${(rowData[i]||'').replace(/"/g,'&quot;')}" placeholder="${h}">
+    </div>`).join('')
+  }</div>`;
+  
+  // Store row index for saving
+  document.getElementById('modal').dataset.editRow = rowIndex;
+  document.getElementById('modal').dataset.editMode = 'true';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+// ── DELETE ROW ───────────────────────────────────────────────
+async function deleteRow(sheetKey, rowIndex, label) {
+  if (!confirm(`ลบ "${label}" ออกจากระบบ?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return;
+  
+  const sheetName = SHEETS[sheetKey]?.name;
+  const startRow = SHEETS[sheetKey]?.startRow || 4;
+  const actualRow = startRow + rowIndex;
+  
+  try {
+    // Clear the row content (Google Sheets API doesn't support delete row directly via values API)
+    // We use batchUpdate to delete the row
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{
+            deleteDimension: {
+              range: {
+                sheetId: await getSheetId(sheetName),
+                dimension: 'ROWS',
+                startIndex: actualRow - 1,
+                endIndex: actualRow
+              }
+            }
+          }]
+        })
+      }
+    );
+    
+    if (response.ok) {
+      await loadAllData();
+    } else {
+      // Fallback: clear row data
+      await fetch(
+        `${BASE}/values/${encodeURIComponent(sheetName + '!A' + actualRow + ':Z' + actualRow)}:clear?key=${API_KEY}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+      );
+      await loadAllData();
+    }
+  } catch(e) {
+    alert('เกิดข้อผิดพลาด: ' + e.message);
+  }
+}
+
+// Get sheet ID for batchUpdate
+async function getSheetId(sheetName) {
+  const res = await fetch(`${BASE}?fields=sheets.properties&key=${API_KEY}`);
+  const j = await res.json();
+  const sheet = j.sheets?.find(s => s.properties.title === sheetName);
+  return sheet?.properties?.sheetId || 0;
+}
+
+// Override saveModal to support edit mode
+const _origSaveModal = saveModal;
+async function saveModal() {
+  const modal = document.getElementById('modal');
+  const isEditMode = modal.dataset.editMode === 'true';
+  
+  if (!isEditMode) {
+    return _origSaveModal();
+  }
+  
+  // Edit mode — update existing row
+  if (!modalCtx) return;
+  const inputs = document.querySelectorAll('#modal-body .form-input');
+  const values = Array.from(inputs).map(i => i.value);
+  const sheetName = SHEETS[modalCtx]?.name;
+  const startRow = SHEETS[modalCtx]?.startRow || 4;
+  const rowIndex = parseInt(modal.dataset.editRow);
+  const actualRow = startRow + rowIndex;
+  
+  if (!sheetName) return;
+  
+  try {
+    const btn = document.querySelector('#modal .btn:not(.btn-ghost)');
+    btn.textContent = 'กำลังบันทึก…'; btn.disabled = true;
+    
+    await fetch(
+      `${BASE}/values/${encodeURIComponent(sheetName + '!A' + actualRow + ':Z' + actualRow)}?valueInputOption=USER_ENTERED&key=${API_KEY}`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: [values] })
+      }
+    );
+    
+    modal.dataset.editMode = 'false';
+    closeModalDirect();
+    await loadAllData();
+  } catch(e) {
+    alert('เกิดข้อผิดพลาด: ' + e.message);
+  }
+}
+
 </script>
 </body>
 </html>
