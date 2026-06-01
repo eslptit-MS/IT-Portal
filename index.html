@@ -3,176 +3,679 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IT Management Portal — ESL/TSC</title>
+<title>IT Management — ESL/TSC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Barlow:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Sarabun:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+/* ── RULE 3: Tinted Neutrals via modern oklch-inspired hex ── */
 :root {
-  --navy:    #0A1628;
-  --navy2:   #0F2040;
-  --navy3:   #162B55;
-  --blue:    #1565C0;
-  --blue2:   #1976D2;
-  --blue3:   #2196F3;
-  --blue4:   #42A5F5;
-  --sky:     #E3F2FD;
-  --white:   #FFFFFF;
-  --gray1:   #F0F4F8;
-  --gray2:   #E1E8EF;
-  --gray3:   #B0BEC5;
-  --gray4:   #607D8B;
-  --text:    #0D1B2A;
-  --text2:   #37474F;
-  --text3:   #607D8B;
-  --green:   #2E7D32;
-  --green-l: #E8F5E9;
-  --red:     #C62828;
-  --red-l:   #FFEBEE;
-  --yellow:  #F57F17;
-  --yellow-l:#FFFDE7;
-  --shadow:  0 2px 8px rgba(10,22,40,.15);
-  --shadow2: 0 4px 16px rgba(10,22,40,.2);
+  /* Sidebar — deep navy with blue tint */
+  --sb-bg:        #0D1E35;
+  --sb-bg-hover:  rgba(99,154,255,.08);
+  --sb-active:    rgba(99,154,255,.15);
+  --sb-border:    rgba(99,154,255,.1);
+  --sb-text:      rgba(220,232,255,.55);
+  --sb-text-hi:   rgba(220,232,255,.92);
+  --sb-section:   rgba(99,154,255,.3);
+  --sb-accent:    #639AFF;
+
+  /* App surface — warm-tinted whites, no raw grays */
+  --surface-0:    #F6F8FC;   /* page bg — blue-tinted cool white */
+  --surface-1:    #FFFFFF;   /* card/panel bg */
+  --surface-2:    #EFF3FA;   /* subtle zone, table alt row */
+  --surface-3:    #E4EAF6;   /* input bg, borders */
+
+  /* Topbar */
+  --top-bg:       #0D1E35;
+  --top-border:   rgba(99,154,255,.2);
+
+  /* Text — not pure black, has warmth */
+  --tx-1:  #111827;   /* primary */
+  --tx-2:  #4B5563;   /* secondary */
+  --tx-3:  #9CA3AF;   /* muted */
+  --tx-inv:#F0F6FF;   /* on dark */
+
+  /* Accent */
+  --blue:  #3B6FE8;   /* main cta — softer than #1565C0 */
+  --blue-h:#2D5BC7;
+
+  /* RULE 4: Softer semantic colors — lower chroma */
+  --ok-fg:    #1D6A38;   /* was #2E7D32 */
+  --ok-bg:    #EBF7EE;
+  --err-fg:   #9B2325;   /* was #C62828 */
+  --err-bg:   #FDECED;
+  --warn-fg:  #92500F;   /* was #F57F17 */
+  --warn-bg:  #FEF3E2;
+  --info-fg:  #1D4EAB;
+  --info-bg:  #EBF1FD;
+
+  /* Typography */
+  --font-body: 'Plus Jakarta Sans', 'Sarabun', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing rhythm */
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  14px;
+
+  /* Shadows — tinted, not gray */
+  --sh-1: 0 1px 3px rgba(13,30,53,.06), 0 1px 2px rgba(13,30,53,.04);
+  --sh-2: 0 4px 12px rgba(13,30,53,.08), 0 2px 4px rgba(13,30,53,.04);
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Sarabun',sans-serif;background:var(--gray1);color:var(--text);min-height:100vh;}
+
+/* ── RESET ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--font-body);
+  background: var(--surface-0);
+  color: var(--tx-1);
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
 
 /* ── LAYOUT ── */
-#app{display:flex;height:100vh;overflow:hidden;}
-#sidebar{width:200px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
-#main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-#topbar{height:54px;background:var(--navy2);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;border-bottom:2px solid var(--blue);}
-#content{flex:1;overflow-y:auto;padding:16px;}
+#app { display:flex; height:100vh; overflow:hidden; }
+#sidebar {
+  width: 212px;
+  background: var(--sb-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border-right: 1px solid var(--sb-border);
+}
+#sidebar::-webkit-scrollbar { display:none; }
+#main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+#topbar {
+  height: 52px;
+  background: var(--top-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 22px;
+  gap: 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--top-border);
+}
+#content { flex:1; overflow-y:auto; padding: 22px 24px; }
 
 /* ── SIDEBAR ── */
-.sb-logo{padding:14px 12px;border-bottom:1px solid rgba(255,255,255,.1);background:var(--navy3);}
-.sb-logo-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-.sb-logo-icon{width:32px;height:32px;background:var(--blue3);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
-.sb-logo h1{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:var(--white);line-height:1.2;letter-spacing:.03em;}
-.sb-logo p{font-size:10px;color:rgba(255,255,255,.45);letter-spacing:.05em;text-transform:uppercase;padding-left:40px;}
-.sb-section{padding:10px 12px 4px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:.12em;text-transform:uppercase;}
-.sb-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.6);transition:all .15s;border-left:3px solid transparent;font-family:'Barlow',sans-serif;font-weight:500;}
-.sb-item:hover{background:rgba(255,255,255,.06);color:var(--white);border-left-color:var(--blue4);}
-.sb-item.active{background:var(--blue);color:var(--white);border-left-color:var(--blue4);}
-.sb-item .si{width:16px;text-align:center;font-size:14px;flex-shrink:0;}
-.sb-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-weight:700;}
+.sb-logo {
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid var(--sb-border);
+}
+.sb-logo-row { display:flex; align-items:center; gap:9px; }
+.sb-logo-mark {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, #3B6FE8, #639AFF);
+  border-radius: 7px;
+  display: flex; align-items:center; justify-content:center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.sb-logo h1 {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sb-text-hi);
+  line-height: 1.3;
+  letter-spacing: .02em;
+}
+.sb-logo p {
+  font-size: 10px;
+  color: var(--sb-section);
+  margin-top: 6px;
+  letter-spacing: .04em;
+}
+
+.sb-section {
+  padding: 14px 16px 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--sb-section);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 16px;
+  margin: 1px 6px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--sb-text);
+  transition: background .12s, color .12s;
+  letter-spacing: .01em;
+}
+.sb-item:hover { background: var(--sb-bg-hover); color: var(--sb-text-hi); }
+.sb-item.active {
+  background: var(--sb-active);
+  color: var(--sb-accent);
+  font-weight: 500;
+}
+.sb-item .si { width:15px; text-align:center; font-size:13px; flex-shrink:0; opacity:.8; }
+.sb-item.active .si { opacity:1; }
+.sb-badge {
+  margin-left: auto;
+  background: var(--err-fg);
+  color: #fff;
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-weight: 600;
+  letter-spacing: .03em;
+}
 
 /* ── TOPBAR ── */
-.tb-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--white);letter-spacing:.05em;text-transform:uppercase;}
-.tb-sub{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.08em;text-transform:uppercase;}
-.tb-spacer{flex:1;}
-#search-box{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:6px 12px 6px 28px;font-size:12px;color:var(--white);width:200px;font-family:'Sarabun',sans-serif;outline:none;transition:all .2s;}
-#search-box::placeholder{color:rgba(255,255,255,.4);}
-#search-box:focus{background:rgba(255,255,255,.15);border-color:var(--blue4);}
-.search-wrap{position:relative;}
-.search-wrap::before{content:'🔍';position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none;}
-.sync-btn{background:var(--blue);border:none;border-radius:4px;padding:6px 14px;font-size:11px;color:#fff;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;letter-spacing:.05em;text-transform:uppercase;transition:all .15s;}
-.sync-btn:hover{background:var(--blue2);}
-#sync-status{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.05em;}
-.tb-user{width:28px;height:28px;background:var(--blue3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:'Barlow Condensed',sans-serif;}
+.tb-left { display:flex; flex-direction:column; gap:1px; }
+.tb-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx-inv);
+  letter-spacing: .01em;
+}
+.tb-sub { font-size: 10px; color: rgba(240,246,255,.4); letter-spacing: .04em; }
+.tb-sp { flex:1; }
+#search-box {
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: var(--r-md);
+  padding: 6px 12px 6px 30px;
+  font-size: 12px;
+  color: var(--tx-inv);
+  width: 200px;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+#search-box::placeholder { color: rgba(240,246,255,.35); }
+#search-box:focus { background: rgba(255,255,255,.11); border-color: var(--sb-accent); }
+.search-wrap { position:relative; }
+.search-wrap::before {
+  content: '⌕';
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: rgba(240,246,255,.35);
+  pointer-events: none;
+}
+.sync-btn {
+  background: rgba(99,154,255,.15);
+  border: 1px solid rgba(99,154,255,.25);
+  border-radius: var(--r-md);
+  padding: 5px 13px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sb-accent);
+  cursor: pointer;
+  font-family: var(--font-body);
+  letter-spacing: .02em;
+  transition: background .12s;
+}
+.sync-btn:hover { background: rgba(99,154,255,.22); }
+#sync-status { font-size: 10px; color: rgba(240,246,255,.3); }
+.tb-avatar {
+  width: 26px; height: 26px;
+  background: linear-gradient(135deg, #3B6FE8, #639AFF);
+  border-radius: 50%;
+  display: flex; align-items:center; justify-content:center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: .04em;
+}
 
-/* ── PAGES ── */
-.page{display:none;}
-.page.active{display:block;animation:fadeIn .2s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+/* ── PAGE TRANSITIONS ── */
+.page { display:none; }
+.page.active { display:block; animation: pgIn .18s ease; }
+@keyframes pgIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
 
-/* ── PAGE HEADER ── */
-.page-header{background:var(--navy2);border-radius:6px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;border-left:4px solid var(--blue3);}
-.page-header h2{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--white);letter-spacing:.05em;text-transform:uppercase;}
-.page-header p{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px;}
+/* ── RULE 1: Anti-Card — page header without heavy box ── */
+.page-hdr {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--surface-3);
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.page-hdr h2 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--tx-1);
+  letter-spacing: -.02em;
+  line-height: 1.2;
+}
+.page-hdr p {
+  font-size: 12px;
+  color: var(--tx-3);
+  font-weight: 400;
+  line-height: 1.5;
+}
 
-/* ── KPI ── */
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px;}
-.kpi-card{background:var(--white);border-radius:6px;padding:14px 16px;box-shadow:var(--shadow);border-top:3px solid var(--blue3);position:relative;overflow:hidden;}
-.kpi-card.kpi-green{border-top-color:var(--green);}
-.kpi-card.kpi-red{border-top-color:var(--red);}
-.kpi-card.kpi-yellow{border-top-color:var(--yellow);}
-.kpi-card.kpi-navy{border-top-color:var(--navy3);}
-.kpi-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
-.kpi-value{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:800;line-height:1;color:var(--navy);}
-.kpi-sub{font-size:10px;color:var(--text3);margin-top:3px;font-family:'Barlow',sans-serif;}
-.kpi-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:24px;opacity:.12;}
-.kpi-card.kpi-green .kpi-value{color:var(--green);}
-.kpi-card.kpi-red .kpi-value{color:var(--red);}
-.kpi-card.kpi-yellow .kpi-value{color:var(--yellow);}
+/* ── RULE 2: KPI — fluid, no nested card-in-card ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 1px;
+  background: var(--surface-3);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: 28px;
+  border: 1px solid var(--surface-3);
+}
+.kpi-card {
+  background: var(--surface-1);
+  padding: 18px 20px 16px;
+  position: relative;
+}
+.kpi-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--kpi-accent, var(--blue));
+  opacity: .6;
+}
+.kpi-card.kpi-green { --kpi-accent: var(--ok-fg); }
+.kpi-card.kpi-red   { --kpi-accent: var(--err-fg); }
+.kpi-card.kpi-yellow{ --kpi-accent: var(--warn-fg); }
+.kpi-card.kpi-navy  { --kpi-accent: #6366F1; }
 
-/* ── PANELS ── */
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.panel{background:var(--white);border-radius:6px;box-shadow:var(--shadow);overflow:hidden;}
-.panel-header{background:var(--navy2);padding:9px 14px;display:flex;align-items:center;gap:8px;}
-.panel-header h3{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--white);letter-spacing:.06em;text-transform:uppercase;}
-.panel-header .ph-badge{margin-left:auto;background:var(--blue3);color:#fff;font-size:9px;padding:2px 8px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.05em;}
-.panel-body{padding:14px;}
+.kpi-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--tx-3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--tx-1);
+  letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-card.kpi-green .kpi-value { color: var(--ok-fg); }
+.kpi-card.kpi-red   .kpi-value { color: var(--err-fg); }
+.kpi-card.kpi-yellow .kpi-value { color: var(--warn-fg); }
+.kpi-sub { font-size: 11px; color: var(--tx-3); margin-top: 3px; }
+.kpi-icon { position:absolute; right:14px; bottom:12px; font-size:20px; opacity:.07; }
+
+/* ── RULE 1: Panels — no panel-header navy box, use spacing instead ── */
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
+.panel {
+  background: var(--surface-1);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--surface-3);
+  overflow: hidden;
+  box-shadow: var(--sh-1);
+}
+.panel-ttl {
+  padding: 14px 18px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.panel-ttl h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tx-2);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.ph-badge {
+  background: var(--info-bg);
+  color: var(--info-fg);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.panel-body { padding: 14px 18px 16px; }
 
 /* ── CHART BARS ── */
-.chart-wrap{display:flex;flex-direction:column;gap:8px;}
-.chart-row{display:flex;align-items:center;gap:8px;}
-.chart-lbl{width:88px;font-size:11px;color:var(--text2);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Barlow',sans-serif;}
-.chart-track{flex:1;background:var(--gray2);border-radius:2px;height:20px;overflow:hidden;}
-.chart-fill{height:100%;border-radius:2px;display:flex;align-items:center;padding-left:8px;font-size:10px;color:#fff;font-weight:700;font-family:'Barlow Condensed',sans-serif;transition:width .7s cubic-bezier(.4,0,.2,1);}
-.chart-num{width:28px;font-size:11px;font-weight:700;color:var(--text2);font-family:'Barlow Condensed',sans-serif;}
+.chart-wrap { display:flex; flex-direction:column; gap:9px; }
+.chart-row { display:flex; align-items:center; gap:10px; }
+.chart-lbl {
+  width: 86px;
+  font-size: 11px;
+  color: var(--tx-2);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chart-track {
+  flex: 1;
+  background: var(--surface-2);
+  border-radius: 3px;
+  height: 18px;
+  overflow: hidden;
+}
+.chart-fill {
+  height: 100%;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  transition: width .7s cubic-bezier(.4,0,.2,1);
+}
+.chart-num { width:24px; font-size:11px; font-weight:600; color:var(--tx-3); text-align:right; }
 
-/* ── TABLE ── */
-.tbl-wrap{background:var(--white);border-radius:6px;box-shadow:var(--shadow);overflow:hidden;}
-table{width:100%;border-collapse:collapse;font-size:12px;}
-thead tr{background:var(--navy2);}
-th{padding:9px 12px;text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;}
-td{padding:8px 12px;border-bottom:1px solid var(--gray2);color:var(--text);vertical-align:middle;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:var(--sky);}
-.mono{font-family:'Courier New',monospace;font-size:11px;color:var(--text3);}
+/* ── RULE 5: Clean Data Grid ── */
+.tbl-wrap {
+  background: var(--surface-1);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--surface-3);
+  overflow: hidden;
+  box-shadow: var(--sh-1);
+}
+table { width:100%; border-collapse:collapse; font-size:12.5px; }
+thead tr { background: var(--surface-2); }
+th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--tx-3);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  /* RULE 5: thin bottom line only, no thick borders */
+  border-bottom: 1px solid var(--surface-3);
+  white-space: nowrap;
+}
+td {
+  padding: 12px 16px;
+  /* RULE 5: very subtle separator */
+  border-bottom: 1px solid var(--surface-2);
+  color: var(--tx-1);
+  vertical-align: middle;
+  line-height: 1.45;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface-2); }
+.mono {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx-2);
+  letter-spacing: .02em;
+}
 
-/* ── BADGES ── */
-.badge{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em;text-transform:uppercase;}
-.bg{background:var(--green-l);color:var(--green);}
-.br{background:var(--red-l);color:var(--red);}
-.by{background:var(--yellow-l);color:var(--yellow);}
-.bb{background:var(--sky);color:var(--blue);}
-.bn{background:var(--gray2);color:var(--text3);}
+/* ── RULE 4: Softened badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  line-height: 1.4;
+}
+.bg { background: var(--ok-bg);   color: var(--ok-fg); }
+.br { background: var(--err-bg);  color: var(--err-fg); }
+.by { background: var(--warn-bg); color: var(--warn-fg); }
+.bb { background: var(--info-bg); color: var(--info-fg); }
+.bn { background: var(--surface-2); color: var(--tx-2); }
 
 /* ── TOOLBAR ── */
-.toolbar{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;}
-.filter-sel{background:var(--white);border:1px solid var(--gray2);border-radius:4px;padding:6px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:'Barlow',sans-serif;outline:none;}
-.filter-sel:focus{border-color:var(--blue3);}
-.btn{background:var(--blue);border:none;border-radius:4px;padding:6px 14px;font-size:11px;color:#fff;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:all .15s;}
-.btn:hover{background:var(--blue2);}
-.btn-ghost{background:var(--white);border:1px solid var(--gray2);color:var(--text2);}
-.btn-ghost:hover{border-color:var(--blue3);color:var(--blue);background:var(--white);}
-.tb-sp{flex:1;}
+.toolbar { display:flex; gap:8px; margin-bottom:12px; align-items:center; flex-wrap:wrap; }
+.filter-sel {
+  background: var(--surface-1);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--r-md);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--tx-2);
+  cursor: pointer;
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color .12s;
+}
+.filter-sel:focus { border-color: var(--blue); }
+.btn {
+  background: var(--blue);
+  border: none;
+  border-radius: var(--r-md);
+  padding: 6px 15px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--font-body);
+  letter-spacing: .01em;
+  transition: background .12s, transform .08s;
+}
+.btn:hover { background: var(--blue-h); }
+.btn:active { transform: scale(.98); }
+.btn-ghost {
+  background: var(--surface-1);
+  border: 1px solid var(--surface-3);
+  color: var(--tx-2);
+}
+.btn-ghost:hover { border-color: var(--blue); color: var(--blue); background: var(--info-bg); }
+.tb-sp { flex:1; }
 
 /* ── PAGINATION ── */
-.pagination{display:flex;align-items:center;gap:5px;margin-top:10px;justify-content:flex-end;}
-.pg-btn{background:var(--white);border:1px solid var(--gray2);border-radius:3px;padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;}
-.pg-btn:hover,.pg-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
-.pg-info{font-size:10px;color:var(--text3);margin-right:4px;font-family:'Barlow',sans-serif;}
+.pagination { display:flex; align-items:center; gap:5px; margin-top:12px; justify-content:flex-end; }
+.pg-btn {
+  background: var(--surface-1);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--r-sm);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx-2);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all .1s;
+}
+.pg-btn:hover { border-color: var(--blue); color: var(--blue); }
+.pg-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.pg-info { font-size: 11px; color: var(--tx-3); margin-right: 4px; }
 
 /* ── MODAL ── */
-#modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:100;align-items:center;justify-content:center;}
-#modal-overlay.open{display:flex;}
-#modal{background:var(--white);border-radius:6px;width:580px;max-height:88vh;overflow-y:auto;box-shadow:var(--shadow2);}
-.modal-hdr{background:var(--navy2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-radius:6px 6px 0 0;}
-.modal-hdr h2{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--white);letter-spacing:.06em;text-transform:uppercase;}
-.modal-close{background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;}
-.modal-body{padding:18px;}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.form-group{display:flex;flex-direction:column;gap:5px;}
-.form-group.full{grid-column:1/-1;}
-.form-label{font-size:11px;font-weight:600;color:var(--text3);font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em;}
-.form-input{background:var(--gray1);border:1px solid var(--gray2);border-radius:4px;padding:7px 10px;font-size:12px;color:var(--text);font-family:'Sarabun',sans-serif;outline:none;}
-.form-input:focus{border-color:var(--blue3);background:var(--white);}
-.modal-ftr{padding:12px 18px;border-top:1px solid var(--gray2);display:flex;gap:8px;justify-content:flex-end;background:var(--gray1);}
+#modal-overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background: rgba(13,30,53,.55);
+  backdrop-filter: blur(3px);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+}
+#modal-overlay.open { display:flex; }
+#modal {
+  background: var(--surface-1);
+  border-radius: 14px;
+  width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--sh-2), 0 0 0 1px rgba(13,30,53,.08);
+}
+.modal-hdr {
+  padding: 18px 22px 16px;
+  border-bottom: 1px solid var(--surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-hdr h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tx-1);
+  letter-spacing: -.01em;
+}
+.modal-close {
+  background: var(--surface-2);
+  border: none;
+  color: var(--tx-3);
+  font-size: 14px;
+  cursor: pointer;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items:center; justify-content:center;
+  transition: background .12s;
+}
+.modal-close:hover { background: var(--err-bg); color: var(--err-fg); }
+.modal-body { padding: 20px 22px; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group.full { grid-column:1/-1; }
+.form-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx-3);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.form-input {
+  background: var(--surface-0);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--r-md);
+  padding: 8px 11px;
+  font-size: 13px;
+  color: var(--tx-1);
+  font-family: var(--font-body);
+  outline: none;
+  transition: border-color .12s, box-shadow .12s;
+}
+.form-input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59,111,232,.1);
+}
+.modal-ftr {
+  padding: 14px 22px;
+  border-top: 1px solid var(--surface-3);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  background: var(--surface-0);
+  border-radius: 0 0 14px 14px;
+}
+
+/* ── WARN BANNER ── */
+.warn-bar {
+  background: var(--warn-bg);
+  border: 1px solid rgba(146,80,15,.15);
+  border-radius: var(--r-md);
+  padding: 9px 14px;
+  font-size: 12px;
+  color: var(--warn-fg);
+  margin-bottom: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
 
 /* ── LOADING ── */
-#loading{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:14px;}
-#loading h2{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--white);letter-spacing:.1em;text-transform:uppercase;}
-#loading p{font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.06em;}
-.spinner{width:38px;height:38px;border:3px solid rgba(255,255,255,.15);border-top-color:var(--blue3);border-radius:50%;animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
+#loading {
+  position: fixed; inset:0;
+  background: var(--sb-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  gap: 14px;
+}
+#loading h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tx-inv);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+#loading p { font-size: 11px; color: rgba(240,246,255,.35); letter-spacing: .05em; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 2.5px solid rgba(255,255,255,.1);
+  border-top-color: var(--sb-accent);
+  border-radius: 50%;
+  animation: spin .65s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
 
-/* ── WARN ── */
-.warn-bar{background:var(--yellow-l);border:1px solid var(--yellow);border-radius:4px;padding:8px 12px;font-size:11px;color:var(--yellow);margin-bottom:10px;font-weight:600;font-family:'Barlow',sans-serif;}
-.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:12px;}
+.empty { text-align:center; padding:44px 20px; color:var(--tx-3); font-size:12.5px; }
 
-@media(max-width:768px){#sidebar{display:none;}.form-grid,.grid2{grid-template-columns:1fr;}}
+/* ── PRINT / REPORT CSS ── */
+@media print {
+  #sidebar, #topbar, .toolbar, .pagination, .sync-btn, .btn, #modal-overlay { display:none !important; }
+  body { background:#fff; font-size:11pt; }
+  #app { height:auto; display:block; }
+  #main { overflow:visible; }
+  #content { padding: 0; overflow:visible; }
+  .page { display:none !important; }
+  .page.active { display:block !important; }
+  .page-hdr {
+    border-bottom: 2px solid #000;
+    margin-bottom: 12pt;
+    padding-bottom: 8pt;
+  }
+  .page-hdr h2 { font-size: 16pt; font-weight: 700; }
+  .page-hdr p { font-size: 10pt; color: #666; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8pt; margin-bottom:16pt; }
+  .kpi-card { border:1px solid #ddd; padding:10pt 12pt; page-break-inside:avoid; }
+  .kpi-value { font-size:20pt; }
+  .tbl-wrap { border:1px solid #ccc; box-shadow:none; page-break-inside:auto; }
+  table { font-size:9pt; }
+  th { background:#f0f0f0 !important; color:#333 !important; border-bottom:1.5px solid #999; padding:7pt 10pt; }
+  td { padding:6pt 10pt; border-bottom:1px solid #e8e8e8; color:#222 !important; }
+  tr:hover td { background:transparent; }
+  .badge { border:1px solid currentColor; background:transparent !important; }
+  .grid2 { grid-template-columns:1fr 1fr; gap:12pt; }
+  .panel { border:1px solid #ddd; box-shadow:none; }
+  .panel-ttl { padding:8pt 12pt 0; }
+  h3 { font-size:10pt; }
+  @page { margin: 15mm 12mm; size: A4 landscape; }
+  /* Print header per page */
+  .print-header {
+    display: block !important;
+    text-align:center;
+    font-size:9pt;
+    color:#999;
+    border-bottom:1px solid #eee;
+    padding-bottom:6pt;
+    margin-bottom:12pt;
+  }
+}
+.print-header { display:none; }
+.print-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-3);
+  border-radius: var(--r-md);
+  padding: 5px 13px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tx-2);
+  cursor: pointer;
+  font-family: var(--font-body);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .12s;
+}
+.print-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--info-bg); }
+
+@media(max-width:768px) {
+  #sidebar { display:none; }
+  .form-grid, .grid2 { grid-template-columns:1fr; }
+  .kpi-grid { grid-template-columns:repeat(2,1fr); }
+}
 </style>
 </head>
 <body>
@@ -180,15 +683,15 @@ tr:hover td{background:var(--sky);}
 <div id="loading">
   <div class="spinner"></div>
   <h2>IT Management Portal</h2>
-  <p>LOADING DATA FROM GOOGLE SHEETS...</p>
+  <p>Loading data from Google Sheets…</p>
 </div>
 
 <div id="app" style="display:none;">
   <div id="sidebar">
     <div class="sb-logo">
-      <div class="sb-logo-top">
-        <div class="sb-logo-icon">🖥</div>
-        <h1>IT MANAGEMENT<br>PORTAL</h1>
+      <div class="sb-logo-row">
+        <div class="sb-logo-mark">🖥</div>
+        <h1>IT Management<br>Portal</h1>
       </div>
       <p>ESL / TSC — Eastern Silicate</p>
     </div>
@@ -218,45 +721,48 @@ tr:hover td{background:var(--sky);}
 
   <div id="main">
     <div id="topbar">
-      <div>
+      <div class="tb-left">
         <div class="tb-title" id="tb-title">Dashboard</div>
         <div class="tb-sub" id="tb-sub">IT Portal / Dashboard</div>
       </div>
-      <div class="tb-spacer"></div>
-      <div class="search-wrap"><input id="search-box" type="text" placeholder="ค้นหาข้อมูล..." oninput="globalSearch(this.value)"></div>
+      <div class="tb-sp"></div>
+      <div class="search-wrap"><input id="search-box" type="text" placeholder="ค้นหาข้อมูล…" oninput="globalSearch(this.value)"></div>
       <button class="sync-btn" onclick="loadAllData()">↻ Sync</button>
+      <button class="print-btn" onclick="window.print()">🖨 พิมพ์</button>
       <span id="sync-status">—</span>
-      <div class="tb-user">IT</div>
+      <div class="tb-avatar">IT</div>
     </div>
 
     <div id="content">
 
       <!-- DASHBOARD -->
       <div id="page-dashboard" class="page active">
-        <div class="page-header">
-          <span style="font-size:20px">📊</span>
-          <div><h2>Dashboard</h2><p>ภาพรวมระบบ IT — Eastern Silicate</p></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Dashboard | พิมพ์: <span id="print-date"></span></div>
+        <div class="page-hdr">
+          <h2>Dashboard</h2>
+          <p>ภาพรวมระบบ IT — Eastern Silicate</p>
         </div>
         <div class="kpi-grid" id="kpi-grid"></div>
         <div class="grid2">
           <div class="panel">
-            <div class="panel-header"><h3>อุปกรณ์ตามประเภท</h3></div>
+            <div class="panel-ttl"><h3>อุปกรณ์ตามประเภท</h3></div>
             <div class="panel-body"><div id="chart-device" class="chart-wrap"></div></div>
           </div>
           <div class="panel">
-            <div class="panel-header"><h3>ผู้ใช้งานตามแผนก</h3></div>
+            <div class="panel-ttl"><h3>ผู้ใช้งานตามแผนก</h3></div>
             <div class="panel-body"><div id="chart-dept" class="chart-wrap"></div></div>
           </div>
         </div>
         <div class="panel">
-          <div class="panel-header"><h3>Helpdesk Tickets ล่าสุด</h3><span class="ph-badge" id="ticket-count">0</span></div>
+          <div class="panel-ttl"><h3>Helpdesk Tickets ล่าสุด</h3><span class="ph-badge" id="ticket-count">0</span></div>
           <div class="panel-body" id="dash-tickets"></div>
         </div>
       </div>
 
       <!-- ASSETS -->
       <div id="page-assets" class="page">
-        <div class="page-header"><span style="font-size:20px">📦</span><div><h2>Assets & Devices</h2><p>ทะเบียนอุปกรณ์ IT ทั้งหมด</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Assets & Devices</div>
+        <div class="page-hdr"><h2>Assets & Devices</h2><p>ทะเบียนอุปกรณ์ IT ทั้งหมด</p></div>
         <div class="toolbar">
           <select class="filter-sel" id="f-asset-type" onchange="renderAssets()"><option value="">ทุกประเภท</option></select>
           <select class="filter-sel" id="f-asset-dept" onchange="renderAssets()"><option value="">ทุกแผนก</option></select>
@@ -270,7 +776,8 @@ tr:hover td{background:var(--sky);}
 
       <!-- USERS -->
       <div id="page-users" class="page">
-        <div class="page-header"><span style="font-size:20px">👤</span><div><h2>User Directory</h2><p>รายชื่อผู้ใช้งานและสิทธิ์การเข้าถึง</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | User Directory</div>
+        <div class="page-hdr"><h2>User Directory</h2><p>รายชื่อผู้ใช้งานและสิทธิ์การเข้าถึง</p></div>
         <div class="toolbar">
           <select class="filter-sel" id="f-user-dept" onchange="renderUsers()"><option value="">ทุกแผนก</option></select>
           <select class="filter-sel" id="f-user-status" onchange="renderUsers()"><option value="">ทุกสถานะ</option><option>Active</option><option>Inactive</option></select>
@@ -283,15 +790,16 @@ tr:hover td{background:var(--sky);}
 
       <!-- PASSWORDS -->
       <div id="page-passwords" class="page">
-        <div class="page-header"><span style="font-size:20px">🔐</span><div><h2>Password Vault</h2><p>รหัสผ่านระบบต่างๆ — เฉพาะ IT Admin</p></div></div>
-        <div class="warn-bar">⚠ ข้อมูลลับ — เฉพาะ IT Admin เท่านั้น | คลิกที่รหัสผ่านเพื่อแสดง</div>
+        <div class="page-hdr"><h2>Password Vault</h2><p>รหัสผ่านระบบต่างๆ — เฉพาะ IT Admin</p></div>
+        <div class="warn-bar">⚠ ข้อมูลลับ — เฉพาะ IT Admin เท่านั้น &nbsp;|&nbsp; คลิกที่รหัสผ่านเพื่อแสดง</div>
         <div class="toolbar"><div class="tb-sp"></div><button class="btn btn-ghost" onclick="openModal('passwords')">+ เพิ่ม</button></div>
         <div class="tbl-wrap"><table><thead id="passwords-head"></thead><tbody id="passwords-body"></tbody></table></div>
       </div>
 
       <!-- HELPDESK -->
       <div id="page-helpdesk" class="page">
-        <div class="page-header"><span style="font-size:20px">🎫</span><div><h2>Helpdesk / Tickets</h2><p>ระบบรับแจ้งปัญหาและติดตามการแก้ไข</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Helpdesk Tickets</div>
+        <div class="page-hdr"><h2>Helpdesk / Tickets</h2><p>ระบบรับแจ้งปัญหาและติดตามการแก้ไข</p></div>
         <div class="toolbar">
           <select class="filter-sel" id="f-ticket-status" onchange="renderHelpdesk()"><option value="">ทุกสถานะ</option><option>เปิด</option><option>กำลังดำเนินการ</option><option>แก้แล้ว</option></select>
           <select class="filter-sel" id="f-ticket-pri" onchange="renderHelpdesk()"><option value="">ทุกความสำคัญ</option><option>สูง</option><option>ปานกลาง</option><option>ต่ำ</option></select>
@@ -304,47 +812,52 @@ tr:hover td{background:var(--sky);}
 
       <!-- MAINTENANCE -->
       <div id="page-maintenance" class="page">
-        <div class="page-header"><span style="font-size:20px">🔩</span><div><h2>Maintenance Schedule</h2><p>ตารางบำรุงรักษาและ PM อุปกรณ์</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Maintenance Schedule</div>
+        <div class="page-hdr"><h2>Maintenance Schedule</h2><p>ตารางบำรุงรักษาและ PM อุปกรณ์</p></div>
         <div class="toolbar"><div class="tb-sp"></div><button class="btn btn-ghost" onclick="openModal('maintenance')">+ เพิ่มแผน PM</button></div>
         <div class="tbl-wrap"><table><thead id="maintenance-head"></thead><tbody id="maintenance-body"></tbody></table></div>
       </div>
 
       <!-- SECURITY -->
       <div id="page-security" class="page">
-        <div class="page-header"><span style="font-size:20px">🛡</span><div><h2>Security Monitor</h2><p>สถานะ Patch และ Antivirus</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Security Monitor</div>
+        <div class="page-hdr"><h2>Security Monitor</h2><p>สถานะ Patch และ Antivirus</p></div>
         <div class="tbl-wrap"><table><thead id="security-head"></thead><tbody id="security-body"></tbody></table></div>
       </div>
 
       <!-- BACKUP -->
       <div id="page-backup" class="page">
-        <div class="page-header"><span style="font-size:20px">💾</span><div><h2>Backup Monitor</h2><p>สถานะ Backup รายระบบ</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Backup Monitor</div>
+        <div class="page-hdr"><h2>Backup Monitor</h2><p>สถานะ Backup รายระบบ</p></div>
         <div class="tbl-wrap"><table><thead id="backup-head"></thead><tbody id="backup-body"></tbody></table></div>
       </div>
 
       <!-- NETWORK -->
       <div id="page-network" class="page">
-        <div class="page-header"><span style="font-size:20px">🌐</span><div><h2>Network & IP Management</h2><p>จัดการ IP Address และ Network</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Network & IP</div>
+        <div class="page-hdr"><h2>Network & IP Management</h2><p>จัดการ IP Address และ Network</p></div>
         <div class="toolbar"><div class="tb-sp"></div><button class="btn btn-ghost" onclick="openModal('network')">+ เพิ่ม IP</button></div>
         <div class="tbl-wrap"><table><thead id="network-head"></thead><tbody id="network-body"></tbody></table></div>
       </div>
 
       <!-- LICENSES -->
       <div id="page-licenses" class="page">
-        <div class="page-header"><span style="font-size:20px">📜</span><div><h2>License Management</h2><p>ซอฟต์แวร์ License และวันหมดอายุ</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | License Management</div>
+        <div class="page-hdr"><h2>License Management</h2><p>ซอฟต์แวร์ License และวันหมดอายุ</p></div>
         <div class="tbl-wrap"><table><thead id="licenses-head"></thead><tbody id="licenses-body"></tbody></table></div>
       </div>
 
       <!-- KNOWLEDGE -->
       <div id="page-knowledge" class="page">
-        <div class="page-header"><span style="font-size:20px">📁</span><div><h2>Knowledge Base</h2><p>คู่มือและเอกสาร IT</p></div></div>
+        <div class="page-hdr"><h2>Knowledge Base</h2><p>คู่มือและเอกสาร IT</p></div>
         <div class="toolbar"><div class="tb-sp"></div><button class="btn btn-ghost" onclick="openModal('knowledge')">+ เพิ่มเอกสาร</button></div>
         <div class="tbl-wrap"><table><thead id="knowledge-head"></thead><tbody id="knowledge-body"></tbody></table></div>
       </div>
 
-
       <!-- CHANGE LOG -->
       <div id="page-changelog" class="page">
-        <div class="page-header"><span style="font-size:20px">📝</span><div><h2>Change Log</h2><p>บันทึกการเปลี่ยนแปลงระบบ IT ทั้งหมด</p></div></div>
+        <div class="print-header">IT Management Portal — ESL/TSC | Change Log</div>
+        <div class="page-hdr"><h2>Change Log</h2><p>บันทึกการเปลี่ยนแปลงระบบ IT ทั้งหมด</p></div>
         <div class="toolbar">
           <select class="filter-sel" id="f-cl-type" onchange="renderChangelog()"><option value="">ทุกประเภท</option><option>Hardware</option><option>Software</option><option>Network</option><option>Server</option><option>OS &amp; Patch</option><option>Config</option></select>
           <select class="filter-sel" id="f-cl-risk" onchange="renderChangelog()"><option value="">ทุกระดับความเสี่ยง</option><option>ต่ำ</option><option>กลาง</option><option>สูง</option><option>วิกฤต</option></select>
@@ -369,22 +882,31 @@ tr:hover td{background:var(--sky);}
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-ftr">
       <button class="btn btn-ghost" onclick="closeModalDirect()">ยกเลิก</button>
-      <button class="btn" onclick="saveModal()">💾 บันทึก</button>
+      <button class="btn" onclick="saveModal()">บันทึก</button>
     </div>
   </div>
 </div>
 
 <script>
+// Set print date
+document.querySelectorAll('#print-date').forEach(el => {
+  el.textContent = new Date().toLocaleDateString('th-TH', {year:'numeric',month:'long',day:'numeric'});
+});
+
 const API_KEY = 'AIzaSyCtqPec7cde2fZXHtvKv0FZsY8XYraduZk';
 const SHEET_ID = '1NZ3RRvtKVWwyU1MJmPvh8xKxYdnXgGwwLUSHajtLnQQ';
 const BASE = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
 const SHEETS = {
-  assets:{name:'📦 Assets',startRow:4},users:{name:'👤 Users',startRow:4},
-  passwords:{name:'🔐 Passwords',startRow:4},helpdesk:{name:'🎫 Helpdesk',startRow:4},
-  maintenance:{name:'🔩 Maintenance',startRow:4},security:{name:'🛡 Security',startRow:4},
-  backup:{name:'💾 Backup',startRow:4},network:{name:'🌐 Network-IP',startRow:4},
-  licenses:{name:'📜 Licenses',startRow:4},knowledge:{name:'📁 Knowledge',startRow:4},
-  changelog:{name:'📝 Change Log',startRow:4},
+  assets:{name:'📦 Assets',startRow:4},
+  users:{name:'👤 Users',startRow:4},
+  passwords:{name:'🔐 Passwords',startRow:4},
+  helpdesk:{name:'🎫 Helpdesk',startRow:4},
+  maintenance:{name:'🔩 Maintenance',startRow:4},
+  security:{name:'🛡 Security',startRow:4},
+  backup:{name:'💾 Backup',startRow:4},
+  network:{name:'🌐 Network-IP',startRow:4},
+  licenses:{name:'📜 Licenses',startRow:4},
+  knowledge:{name:'📁 Knowledge',startRow:4},
   changelog:{name:'📝 Change Log',startRow:4},
 };
 let DATA={},paginations={},modalCtx=null;
@@ -399,7 +921,7 @@ async function fetchHeaders(n,r){
   const j=await res.json();return(j.values&&j.values[0])||[];
 }
 async function loadAllData(){
-  document.getElementById('sync-status').textContent='syncing...';
+  document.getElementById('sync-status').textContent='syncing…';
   try{
     for(const[k,c]of Object.entries(SHEETS)){
       const h=await fetchHeaders(c.name,c.startRow-1);
@@ -409,12 +931,12 @@ async function loadAllData(){
     renderAll();
     const n=new Date();
     document.getElementById('sync-status').textContent=n.getHours()+':'+String(n.getMinutes()).padStart(2,'0');
-  }catch(e){document.getElementById('sync-status').textContent='Error!';console.error(e);}
+  }catch(e){document.getElementById('sync-status').textContent='Error';console.error(e);}
 }
 function renderAll(){
   renderDashboard();renderAssets();renderUsers();renderPasswords();
   renderHelpdesk();renderMaintenance();renderSecurity();renderBackup();
-  renderNetwork();renderLicenses();renderKnowledge();renderChangelog();renderChangelog();
+  renderNetwork();renderLicenses();renderKnowledge();renderChangelog();
 }
 
 // DASHBOARD
@@ -436,36 +958,39 @@ function renderDashboard(){
       <div class="kpi-sub">${k.s}</div>
       <div class="kpi-icon">${k.icon}</div>
     </div>`).join('');
-  const colors=['#1565C0','#2E7D32','#5C3693','#E65100','#00796B','#C62828','#00838F','#558B2F'];
+
+  const colors=['#3B6FE8','#1D6A38','#6366F1','#92500F','#0F766E','#9B2325','#0369A1','#4D7C0F'];
   const tc={};a.forEach(r=>{const t=r[2]||'ไม่ระบุ';tc[t]=(tc[t]||0)+1;});
   const maxT=Math.max(...Object.values(tc),1);
   document.getElementById('chart-device').innerHTML=Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,8)
     .map(([t,c],i)=>`<div class="chart-row"><div class="chart-lbl">${t}</div>
     <div class="chart-track"><div class="chart-fill" style="width:${(c/maxT*100).toFixed(0)}%;background:${colors[i%colors.length]}">${c}</div></div>
     <div class="chart-num">${c}</div></div>`).join('');
+
   const dc={};u.forEach(r=>{const d=r[4]||'ไม่ระบุ';dc[d]=(dc[d]||0)+1;});
   const maxD=Math.max(...Object.values(dc),1);
   document.getElementById('chart-dept').innerHTML=Object.entries(dc).sort((a,b)=>b[1]-a[1]).slice(0,10)
     .map(([d,c],i)=>`<div class="chart-row"><div class="chart-lbl">${d}</div>
     <div class="chart-track"><div class="chart-fill" style="width:${(c/maxD*100).toFixed(0)}%;background:${colors[i%colors.length]}">${c}</div></div>
     <div class="chart-num">${c}</div></div>`).join('');
+
   const rec=h.slice(0,5);
   document.getElementById('ticket-count').textContent=h.length+' รายการ';
   document.getElementById('dash-tickets').innerHTML=rec.length?`
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
-      <thead><tr style="background:var(--navy2);">
-        <th style="padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.07em;text-align:left;">ID</th>
-        <th style="padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.07em;text-align:left;">หัวข้อ</th>
-        <th style="padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.07em;text-align:left;">ผู้แจ้ง</th>
-        <th style="padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.07em;text-align:left;">สถานะ</th>
-        <th style="padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,.85);text-transform:uppercase;letter-spacing:.07em;text-align:left;">ความสำคัญ</th>
+      <thead><tr style="background:var(--surface-2);">
+        <th style="padding:10px 16px;font-size:10.5px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--surface-3);text-align:left;">ID</th>
+        <th style="padding:10px 16px;font-size:10.5px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--surface-3);text-align:left;">หัวข้อ</th>
+        <th style="padding:10px 16px;font-size:10.5px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--surface-3);text-align:left;">ผู้แจ้ง</th>
+        <th style="padding:10px 16px;font-size:10.5px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--surface-3);text-align:left;">สถานะ</th>
+        <th style="padding:10px 16px;font-size:10.5px;font-weight:600;color:var(--tx-3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--surface-3);text-align:left;">ความสำคัญ</th>
       </tr></thead>
       <tbody>${rec.map(r=>`<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid var(--gray2);" class="mono">${r[0]||''}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid var(--gray2);">${r[4]||''}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid var(--gray2);color:var(--text3);">${r[2]||''}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid var(--gray2);">${sBadge(r[5])}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid var(--gray2);">${pBadge(r[6])}</td>
+        <td style="padding:11px 16px;border-bottom:1px solid var(--surface-2);font-family:var(--font-mono);font-size:11px;color:var(--tx-2);">${r[0]||''}</td>
+        <td style="padding:11px 16px;border-bottom:1px solid var(--surface-2);">${r[4]||''}</td>
+        <td style="padding:11px 16px;border-bottom:1px solid var(--surface-2);color:var(--tx-2);">${r[2]||''}</td>
+        <td style="padding:11px 16px;border-bottom:1px solid var(--surface-2);">${sBadge(r[5])}</td>
+        <td style="padding:11px 16px;border-bottom:1px solid var(--surface-2);">${pBadge(r[6])}</td>
       </tr>`).join('')}</tbody>
     </table>`:'<div class="empty">ไม่มี Ticket</div>';
 }
@@ -525,7 +1050,7 @@ function renderPasswords(){
   renderTable('passwords','passwords-head','passwords-body',[
     {idx:0,label:'ลำดับ',mono:true},{idx:1,label:'ระบบ/บริการ'},{idx:2,label:'URL/IP',mono:true},
     {idx:3,label:'Username',mono:true},
-    {idx:4,label:'Password',render:v=>`<span style="filter:blur(4px);cursor:pointer;user-select:none;background:var(--gray1);padding:2px 8px;border-radius:3px;font-family:monospace;font-size:11px;" onclick="this.style.filter='none';this.style.background='var(--red-l)'">${v||'—'}</span>`},
+    {idx:4,label:'Password',render:v=>`<span style="filter:blur(4px);cursor:pointer;user-select:none;background:var(--surface-2);padding:3px 10px;border-radius:20px;font-family:var(--font-mono);font-size:11px;" onclick="this.style.filter='none';this.style.background='var(--err-bg)'">${v||'—'}</span>`},
     {idx:5,label:'ประเภท'},{idx:6,label:'บันทึกโดย'},{idx:7,label:'อัปเดต'},
   ],null,null);
 }
@@ -573,7 +1098,6 @@ function renderLicenses(){
     {idx:5,label:'วันซื้อ'},{idx:6,label:'วันหมดอายุ'},{idx:7,label:'ราคา/ปี',mono:true},{idx:8,label:'หมายเหตุ'},
   ],null,null);
 }
-
 function renderChangelog(){
   const ft=document.getElementById('f-cl-type')?.value;
   const fr=document.getElementById('f-cl-risk')?.value;
@@ -589,12 +1113,11 @@ function renderChangelog(){
     {idx:12,label:'ผู้ดำเนินการ'},{idx:13,label:'ผู้อนุมัติ'},{idx:14,label:'หมายเหตุ'},
   ],r=>r.filter(row=>(!ft||row[3]===ft)&&(!fr||row[11]===fr)),'changelog');
 }
-
 function renderKnowledge(){
   renderTable('knowledge','knowledge-head','knowledge-body',[
     {idx:0,label:'Doc ID',mono:true},{idx:1,label:'หัวข้อ'},{idx:2,label:'หมวดหมู่'},
     {idx:3,label:'ระดับ',render:v=>rBadge(v)},{idx:4,label:'เขียนโดย'},{idx:5,label:'วันที่'},
-    {idx:6,label:'Link',render:v=>v?`<a href="${v}" target="_blank" style="color:var(--blue3);font-weight:600;font-family:'Barlow Condensed',sans-serif;">เปิด ↗</a>`:'—'},
+    {idx:6,label:'Link',render:v=>v?`<a href="${v}" target="_blank" style="color:var(--blue);font-weight:500;">เปิด ↗</a>`:'—'},
   ],null,null);
 }
 
@@ -621,7 +1144,7 @@ function globalSearch(){renderAll();}
 // MODAL
 function openModal(type){
   modalCtx=type;
-  const titles={assets:'เพิ่มอุปกรณ์',users:'เพิ่ม User',passwords:'เพิ่ม Password',helpdesk:'เปิด Ticket ใหม่',maintenance:'เพิ่มแผน PM',network:'เพิ่ม IP Address',knowledge:'เพิ่มเอกสาร'};
+  const titles={assets:'เพิ่มอุปกรณ์',users:'เพิ่ม User',passwords:'เพิ่ม Password',helpdesk:'เปิด Ticket ใหม่',maintenance:'เพิ่มแผน PM',network:'เพิ่ม IP Address',knowledge:'เพิ่มเอกสาร',changelog:'บันทึกการเปลี่ยนแปลง'};
   document.getElementById('modal-title').textContent=titles[type]||'เพิ่มข้อมูล';
   const headers=DATA[type]?.headers||[];
   document.getElementById('modal-body').innerHTML=`<div class="form-grid">${headers.map((h,i)=>`<div class="form-group"><label class="form-label">${h}</label><input class="form-input" data-idx="${i}" placeholder="${h}"></div>`).join('')}</div>`;
@@ -637,7 +1160,7 @@ async function saveModal(){
   if(!sheetName)return;
   try{
     const btn=document.querySelector('#modal .btn:not(.btn-ghost)');
-    btn.textContent='กำลังบันทึก...';btn.disabled=true;
+    btn.textContent='กำลังบันทึก…';btn.disabled=true;
     await fetch(`${BASE}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=USER_ENTERED&key=${API_KEY}`,{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({values:[values]})
@@ -647,6 +1170,9 @@ async function saveModal(){
 }
 
 (async()=>{
+  document.querySelectorAll('#print-date').forEach(el=>{
+    el.textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  });
   await loadAllData();
   document.getElementById('loading').style.display='none';
   document.getElementById('app').style.display='flex';
