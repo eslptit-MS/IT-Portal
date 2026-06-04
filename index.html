@@ -723,6 +723,116 @@ body.is-admin .admin-only { display: inline-flex; }
 }
 body.is-admin .admin-bar { display: flex; }
 
+
+/* ── MOBILE NAVIGATION ── */
+@media(max-width:768px) {
+  #sidebar { display:none !important; }
+  .form-grid, .grid2 { grid-template-columns:1fr; }
+  .kpi-grid { grid-template-columns:repeat(2,1fr); }
+  #content { padding: 14px; padding-bottom: 80px; }
+  #topbar { padding: 0 14px; }
+  #search-box { width: 140px; }
+
+  /* Mobile bottom nav */
+  #mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--sb-bg);
+    border-top: 1px solid var(--sb-border);
+    z-index: 50;
+    height: 56px;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 4px;
+  }
+  .mob-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--sb-text);
+    font-size: 9px;
+    font-weight: 500;
+    transition: all .12s;
+    flex: 1;
+    max-width: 64px;
+    border: none;
+    background: none;
+    font-family: var(--font-body);
+  }
+  .mob-nav-btn .mob-icon { font-size: 18px; line-height: 1; }
+  .mob-nav-btn.active { color: var(--sb-accent); }
+  .mob-nav-btn:hover { background: var(--sb-bg-hover); }
+
+  /* Mobile menu drawer */
+  #mobile-drawer {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+  }
+  #mobile-drawer.open { display: block; }
+  #mobile-drawer-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(13,30,53,.6);
+    backdrop-filter: blur(2px);
+  }
+  #mobile-drawer-panel {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--sb-bg);
+    border-radius: 16px 16px 0 0;
+    padding: 12px 0 24px;
+    max-height: 75vh;
+    overflow-y: auto;
+  }
+  .drawer-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,.2);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .drawer-section {
+    padding: 8px 20px 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: var(--sb-section);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--sb-text);
+    transition: background .12s;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-family: var(--font-body);
+  }
+  .drawer-item:hover, .drawer-item.active {
+    background: var(--sb-bg-hover);
+    color: var(--sb-text-hi);
+  }
+  .drawer-item.active { color: var(--sb-accent); }
+  .drawer-icon { font-size: 18px; width: 24px; text-align: center; }
+}
+
+@media(min-width:769px) {
+  #mobile-nav { display: none !important; }
+  #mobile-drawer { display: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -920,7 +1030,46 @@ body.is-admin .admin-bar { display: flex; }
 
     </div>
   </div>
-</div>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <div id="mobile-nav">
+    <button class="mob-nav-btn active" onclick="showPage('dashboard');setMobActive(this)">
+      <span class="mob-icon">📊</span>Dashboard
+    </button>
+    <button class="mob-nav-btn" onclick="showPage('assets');setMobActive(this)">
+      <span class="mob-icon">📦</span>Assets
+    </button>
+    <button class="mob-nav-btn" onclick="showPage('helpdesk');setMobActive(this)">
+      <span class="mob-icon">🎫</span>Helpdesk
+    </button>
+    <button class="mob-nav-btn" onclick="showPage('users');setMobActive(this)">
+      <span class="mob-icon">👤</span>Users
+    </button>
+    <button class="mob-nav-btn" onclick="openDrawer()">
+      <span class="mob-icon">☰</span>เพิ่มเติม
+    </button>
+  </div>
+
+  <!-- MOBILE DRAWER -->
+  <div id="mobile-drawer">
+    <div id="mobile-drawer-overlay" onclick="closeDrawer()"></div>
+    <div id="mobile-drawer-panel">
+      <div class="drawer-handle"></div>
+      <div class="drawer-section">Assets & Users</div>
+      <button class="drawer-item" onclick="showPage('network');closeDrawer()"><span class="drawer-icon">🌐</span>Network / IP</button>
+      <button class="drawer-item" onclick="showPage('licenses');closeDrawer()"><span class="drawer-icon">📜</span>Licenses</button>
+      <div class="drawer-section">Operations</div>
+      <button class="drawer-item" onclick="showPage('maintenance');closeDrawer()"><span class="drawer-icon">🔩</span>Maintenance</button>
+      <div class="drawer-section">Security</div>
+      <button class="drawer-item" onclick="showPage('security');closeDrawer()"><span class="drawer-icon">🛡</span>Security Monitor</button>
+      <button class="drawer-item" onclick="showPage('backup');closeDrawer()"><span class="drawer-icon">💾</span>Backup Monitor</button>
+      <button class="drawer-item" onclick="showPage('passwords');closeDrawer()"><span class="drawer-icon">🔐</span>Password Vault</button>
+      <div class="drawer-section">Documents</div>
+      <button class="drawer-item" onclick="showPage('knowledge');closeDrawer()"><span class="drawer-icon">📁</span>Knowledge Base</button>
+      <button class="drawer-item" onclick="showPage('changelog');closeDrawer()"><span class="drawer-icon">📝</span>Change Log</button>
+    </div>
+  </div>
+
 
 <!-- MODAL -->
 <div id="modal-overlay" onclick="closeModal(event)">
@@ -1355,6 +1504,32 @@ async function saveModal() {
   } catch(e) {
     alert('เกิดข้อผิดพลาด: ' + e.message);
   }
+}
+
+
+// ── MOBILE NAV ───────────────────────────────────────────────
+function setMobActive(btn) {
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+function openDrawer() {
+  document.getElementById('mobile-drawer').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+  document.getElementById('mobile-drawer').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Update showPage to sync mobile nav
+const _origShowPage = showPage;
+function showPage(n) {
+  _origShowPage(n);
+  // sync bottom nav active state
+  const mainPages = ['dashboard','assets','helpdesk','users'];
+  document.querySelectorAll('.mob-nav-btn').forEach((btn, i) => {
+    btn.classList.remove('active');
+    if (mainPages[i] === n) btn.classList.add('active');
+  });
 }
 
 </script>
