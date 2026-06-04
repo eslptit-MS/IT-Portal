@@ -1204,15 +1204,18 @@ function renderTable(key,hId,bId,cols,filterFn,pgKey){
   if(q)rows=rows.filter(r=>r.some(c=>String(c).toLowerCase().includes(q)));
   const pg=paginations[pgKey]||1,total=rows.length,pages=Math.ceil(total/PG);
   const sl=rows.slice((pg-1)*PG,pg*PG);
-  const adminCols = isAdmin ? `<th class="admin-only" style="width:80px">จัดการ</th>` : '';
-  document.getElementById(hId).innerHTML=`<tr>${cols.map(c=>`<th>${d.headers[c.idx]||c.label||''}</th>`).join('')}${adminCols}</tr>`;
+  const adminCols = isAdmin ? '<th class="admin-only" style="width:80px">จัดการ</th>' : '';
+  document.getElementById(hId).innerHTML='<tr>'+cols.map(c=>'<th>'+(d.headers[c.idx]||c.label||'')+'</th>').join('')+adminCols+'</tr>';
   document.getElementById(bId).innerHTML=sl.length
     ?sl.map((r,i)=>{
-      const globalIdx = (pg-1)*PG + i;
-      const adminCell = isAdmin ? `<td class="admin-only" style="white-space:nowrap;"><button class="edit-btn" onclick='editRow("${key}",${globalIdx},${JSON.stringify(d.headers)},${JSON.stringify(r)})'>✏️ แก้</button> <button class="del-btn" onclick='deleteRow("${key}",${globalIdx},"${(r[0]||'').replace(/'/g,"\'")}") '>🗑</button></td>` : '';
-      return `<tr>${cols.map(c=>`<td class="${c.mono?'mono':''}">${c.render?c.render(r[c.idx]||'',r):(r[c.idx]||'—')}</td>`).join('')}${adminCell}</tr>`;
+      const globalIdx=(pg-1)*PG+i;
+      const h=JSON.stringify(d.headers);
+      const rv=JSON.stringify(r);
+      const label=(r[0]||'').replace(/'/g,'');
+      const adminCell=isAdmin?'<td class="admin-only" style="white-space:nowrap"><button class="edit-btn" onclick="editRow(\''+key+'\','+globalIdx+','+h+','+rv+')">✏️ แก้</button> <button class="del-btn" onclick="deleteRow(\''+key+'\','+globalIdx+',\''+label+'\')">🗑</button></td>':'';
+      return '<tr>'+cols.map(c=>'<td class="'+(c.mono?'mono':'')+'">'+(c.render?c.render(r[c.idx]||'',r):(r[c.idx]||'—'))+'</td>').join('')+adminCell+'</tr>';
     }).join('')
-    :`<tr><td colspan="${cols.length + (isAdmin?1:0)}" class="empty">ไม่มีข้อมูล</td></tr>`;
+    :'<tr><td colspan="'+(cols.length+(isAdmin?1:0))+'" class="empty">ไม่มีข้อมูล</td></tr>';
   const pe=document.getElementById(`${key}-pg`);
   if(pe)pe.innerHTML=total>PG?`
     <span class="pg-info">${(pg-1)*PG+1}–${Math.min(pg*PG,total)} / ${total}</span>
