@@ -1,0 +1,25 @@
+{
+  "name": "IT Management Portal",
+  "short_name": "IT Portal",
+  "description": "IT Management Portal — Eastern Silicate ESL/TSC",
+  "start_url": "/IT-Portal/",
+  "scope": "/IT-Portal/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0D1E35",
+  "theme_color": "#0D1E35",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='24' fill='%230D1E35'/><text y='130' x='96' text-anchor='middle' font-size='120'>🖥</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='64' fill='%230D1E35'/><text y='360' x='256' text-anchor='middle' font-size='320'>🖥</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "lang": "th"
+}
