@@ -1343,6 +1343,7 @@ function showPage(n){
   document.getElementById('tb-title').textContent=TITLES[n]||n;
   document.getElementById('tb-sub').textContent=`IT Portal / ${TITLES[n]||n}`;
   document.querySelectorAll('.sb-item').forEach(s=>{if(s.getAttribute('onclick')?.includes(`'${n}'`))s.classList.add('active');});
+  if(typeof syncMobNav==='function') syncMobNav(n);
 }
 function globalSearch(){renderAll();}
 
@@ -1357,125 +1358,12 @@ function openModal(type){
 }
 function closeModal(e){if(e.target===document.getElementById('modal-overlay'))closeModalDirect();}
 function closeModalDirect(){document.getElementById('modal-overlay').classList.remove('open');}
-async function saveModal(){
-  if(!modalCtx)return;
-  const inputs=document.querySelectorAll('#modal-body .form-input');
-  const values=Array.from(inputs).map(i=>i.value);
-  const sheetName=SHEETS[modalCtx]?.name;
-  if(!sheetName)return;
-  try{
-    const btn=document.querySelector('#modal .btn:not(.btn-ghost)');
-    btn.textContent='กำลังบันทึก…';btn.disabled=true;
-    await fetch(`${BASE}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=USER_ENTERED&key=${API_KEY}`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({values:[values]})
-    });
-    closeModalDirect();await loadAllData();
-  }catch(e){alert('เกิดข้อผิดพลาด: '+e.message);}
-}
-
-(async()=>{
-  document.querySelectorAll('#print-date').forEach(el=>{
-    el.textContent=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
-  });
-  await loadAllData();
-  document.getElementById('loading').style.display='none';
-  document.getElementById('app').style.display='flex';
-})();
-
-// ── ADMIN MODE ──────────────────────────────────────────────
-const ADMIN_KEY = 'tsc007esl';
-const isAdmin = new URLSearchParams(window.location.search).get('admin') === ADMIN_KEY;
-if (isAdmin) document.body.classList.add('is-admin');
-
-// ── EDIT ROW ─────────────────────────────────────────────────
-async function editRow(sheetKey, rowIndex, headers, rowData) {
-  modalCtx = sheetKey;
-  const titles = {
-    assets:'แก้ไขอุปกรณ์', users:'แก้ไข User', passwords:'แก้ไข Password',
-    helpdesk:'แก้ไข Ticket', maintenance:'แก้ไขแผน PM', network:'แก้ไข IP',
-    knowledge:'แก้ไขเอกสาร', security:'แก้ไข Security', backup:'แก้ไข Backup',
-    licenses:'แก้ไข License', changelog:'แก้ไข Change Log'
-  };
-  document.getElementById('modal-title').textContent = titles[sheetKey] || 'แก้ไขข้อมูล';
-  document.getElementById('modal-body').innerHTML = `<div class="form-grid">${
-    headers.map((h, i) => `<div class="form-group">
-      <label class="form-label">${h}</label>
-      <input class="form-input" data-idx="${i}" value="${(rowData[i]||'').replace(/"/g,'&quot;')}" placeholder="${h}">
-    </div>`).join('')
-  }</div>`;
-  
-  // Store row index for saving
-  document.getElementById('modal').dataset.editRow = rowIndex;
-  document.getElementById('modal').dataset.editMode = 'true';
-  document.getElementById('modal-overlay').classList.add('open');
-}
-
-// ── DELETE ROW ───────────────────────────────────────────────
-async function deleteRow(sheetKey, rowIndex, label) {
-  if (!confirm(`ลบ "${label}" ออกจากระบบ?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return;
-  
-  const sheetName = SHEETS[sheetKey]?.name;
-  const startRow = SHEETS[sheetKey]?.startRow || 4;
-  const actualRow = startRow + rowIndex;
-  
-  try {
-    // Clear the row content (Google Sheets API doesn't support delete row directly via values API)
-    // We use batchUpdate to delete the row
-    const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requests: [{
-            deleteDimension: {
-              range: {
-                sheetId: await getSheetId(sheetName),
-                dimension: 'ROWS',
-                startIndex: actualRow - 1,
-                endIndex: actualRow
-              }
-            }
-          }]
-        })
-      }
-    );
-    
-    if (response.ok) {
-      await loadAllData();
-    } else {
-      // Fallback: clear row data
-      await fetch(
-        `${BASE}/values/${encodeURIComponent(sheetName + '!A' + actualRow + ':Z' + actualRow)}:clear?key=${API_KEY}`,
-        { method: 'POST', headers: { 'Content-Type': 'application/json' } }
-      );
-      await loadAllData();
-    }
-  } catch(e) {
-    alert('เกิดข้อผิดพลาด: ' + e.message);
-  }
-}
-
-// Get sheet ID for batchUpdate
-async function getSheetId(sheetName) {
-  const res = await fetch(`${BASE}?fields=sheets.properties&key=${API_KEY}`);
-  const j = await res.json();
-  const sheet = j.sheets?.find(s => s.properties.title === sheetName);
-  return sheet?.properties?.sheetId || 0;
-}
-
-// Override saveModal to support edit mode
-const _origSaveModal = saveModal;
 async function saveModal() {
   const modal = document.getElementById('modal');
   const isEditMode = modal.dataset.editMode === 'true';
   
   if (!isEditMode) {
-    return _origSaveModal();
-  }
-  
-  // Edit mode — update existing row
+    // Edit mode — update existing row
   if (!modalCtx) return;
   const inputs = document.querySelectorAll('#modal-body .form-input');
   const values = Array.from(inputs).map(i => i.value);
@@ -1521,11 +1409,8 @@ function closeDrawer() {
   document.getElementById('mobile-drawer').classList.remove('open');
   document.body.style.overflow = '';
 }
-// Update showPage to sync mobile nav
-const _origShowPage = showPage;
-function showPage(n) {
-  _origShowPage(n);
-  // sync bottom nav active state
+// Sync mobile nav when page changes
+function syncMobNav(n) {
   const mainPages = ['dashboard','assets','helpdesk','users'];
   document.querySelectorAll('.mob-nav-btn').forEach((btn, i) => {
     btn.classList.remove('active');
