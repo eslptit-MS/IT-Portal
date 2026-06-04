@@ -1196,6 +1196,69 @@ function renderDashboard(){
 }
 
 // GENERIC TABLE
+// ── ADMIN MODE ──────────────────────────────────────────────
+const ADMIN_KEY = 'tsc007esl';
+const isAdmin = new URLSearchParams(window.location.search).get('admin') === ADMIN_KEY;
+if (isAdmin) document.body.classList.add('is-admin');
+
+// ── EDIT / DELETE ────────────────────────────────────────────
+async function editRow(sheetKey, rowIndex, headers, rowData) {
+  const titles = {assets:'แก้ไขอุปกรณ์',users:'แก้ไข User',passwords:'แก้ไข Password',
+    helpdesk:'แก้ไข Ticket',maintenance:'แก้ไขแผน PM',network:'แก้ไข IP',
+    knowledge:'แก้ไขเอกสาร',security:'แก้ไข Security',backup:'แก้ไข Backup',
+    licenses:'แก้ไข License',changelog:'แก้ไข Change Log'};
+  const modalCtxSaved = sheetKey;
+  window._editCtx = {sheetKey, rowIndex, headers, rowData};
+  document.getElementById('modal-title').textContent = titles[sheetKey]||'แก้ไขข้อมูล';
+  document.getElementById('modal-body').innerHTML = '<div class="form-grid">'+
+    headers.map((h,i)=>'<div class="form-group"><label class="form-label">'+h+'</label><input class="form-input" data-idx="'+i+'" value="'+(rowData[i]||'').toString().replace(/"/g,'&quot;')+'" placeholder="'+h+'"></div>').join('')+
+  '</div>';
+  const modal = document.getElementById('modal');
+  modal.dataset.editMode = 'true';
+  modal.dataset.editKey = sheetKey;
+  modal.dataset.editRow = rowIndex;
+  document.getElementById('modal-overlay').classList.add('open');
+  // Set modalCtx globally
+  window._modalCtx = sheetKey;
+}
+
+async function deleteRow(sheetKey, rowIndex, label) {
+  if (!confirm('ลบ "'+label+'" ออกจากระบบ?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้')) return;
+  const sheetName = SHEETS[sheetKey]?.name;
+  const startRow = SHEETS[sheetKey]?.startRow || 4;
+  const actualRow = startRow + rowIndex;
+  try {
+    const res = await fetch(BASE+'?fields=sheets.properties&key='+API_KEY);
+    const j = await res.json();
+    const sheet = j.sheets?.find(s => s.properties.title === sheetName);
+    const sheetId = sheet?.properties?.sheetId || 0;
+    await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+':batchUpdate?key='+API_KEY, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({requests:[{deleteDimension:{range:{sheetId,dimension:'ROWS',startIndex:actualRow-1,endIndex:actualRow}}}]})
+    });
+    await loadAllData();
+  } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+}
+
+function doEdit(btn) {
+  const tbody = btn.closest('tbody');
+  const key = tbody.id.replace('-body','');
+  const rowIdx = Array.from(tbody.querySelectorAll('tr')).indexOf(btn.closest('tr'));
+  const pg = paginations[key]||1;
+  const globalIdx = (pg-1)*PG+rowIdx;
+  const tmp = DATA._editTmp && DATA._editTmp[key+'_'+globalIdx];
+  if(tmp) editRow(tmp.key,tmp.idx,tmp.h,tmp.r);
+}
+function doDel(btn) {
+  const tbody = btn.closest('tbody');
+  const key = tbody.id.replace('-body','');
+  const rowIdx = Array.from(tbody.querySelectorAll('tr')).indexOf(btn.closest('tr'));
+  const pg = paginations[key]||1;
+  const globalIdx = (pg-1)*PG+rowIdx;
+  const tmp = DATA._editTmp && DATA._editTmp[key+'_'+globalIdx];
+  deleteRow(key,globalIdx,tmp?tmp.r[0]||'':'');
+}
+
 function renderTable(key,hId,bId,cols,filterFn,pgKey){
   const d=DATA[key];if(!d)return;
   let rows=d.rows.filter(r=>r.some(c=>c));
