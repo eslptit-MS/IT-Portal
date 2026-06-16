@@ -1435,32 +1435,38 @@ function closeModalDirect(){document.getElementById('modal-overlay').classList.r
 async function saveModal() {
   const modal = document.getElementById('modal');
   const isEditMode = modal.dataset.editMode === 'true';
-  if (!modalCtx) return;
+  // ดึง key จาก editKey (กรณี edit) หรือ modalCtx (กรณีเพิ่มใหม่)
+  const activeKey = isEditMode ? modal.dataset.editKey : modalCtx;
+  if (!activeKey) return;
   const inputs = document.querySelectorAll('#modal-body .form-input');
   const values = Array.from(inputs).map(i => i.value);
-  const sheetName = SHEETS[modalCtx]?.name;
+  const sheetName = SHEETS[activeKey]?.name;
   if (!sheetName) return;
   const btn = document.querySelector('#modal .btn:not(.btn-ghost)');
-  btn.textContent = 'กำลังบันทึก…'; btn.disabled = true;
+  if (btn) { btn.textContent = 'กำลังบันทึก…'; btn.disabled = true; }
   try {
     if (isEditMode) {
-      const startRow = SHEETS[modalCtx]?.startRow || 4;
+      const startRow = SHEETS[activeKey]?.startRow || 4;
       const rowIndex = parseInt(modal.dataset.editRow);
       const actualRow = startRow + rowIndex;
       await fetch(
-        `${BASE}/values/${encodeURIComponent(sheetName+'!A'+actualRow+':Z'+actualRow)}?valueInputOption=USER_ENTERED&key=${API_KEY}`,
+        BASE+'/values/'+encodeURIComponent(sheetName+'!A'+actualRow+':Z'+actualRow)+'?valueInputOption=USER_ENTERED&key='+API_KEY,
         { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({values:[values]}) }
       );
       modal.dataset.editMode = 'false';
+      modal.dataset.editKey = '';
     } else {
       await fetch(
-        `${BASE}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=USER_ENTERED&key=${API_KEY}`,
+        BASE+'/values/'+encodeURIComponent(sheetName)+':append?valueInputOption=USER_ENTERED&key='+API_KEY,
         { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({values:[values]}) }
       );
     }
     closeModalDirect();
     await loadAllData();
-  } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
+  } catch(e) {
+    if (btn) { btn.textContent = 'บันทึก'; btn.disabled = false; }
+    alert('เกิดข้อผิดพลาด: '+e.message);
+  }
 }
 
 // ── MOBILE NAV ───────────────────────────────────────────────
