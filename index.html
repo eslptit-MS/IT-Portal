@@ -1101,6 +1101,7 @@ document.querySelectorAll('#print-date').forEach(el => {
 });
 
 const API_KEY = 'AIzaSyCtqPec7cde2fZXHtvKv0FZsY8XYraduZk';
+const WRITER_URL = 'https://script.google.com/macros/s/AKfycbynbALDUlnqNEKmbDg_Azow1jtgae0kRJHG-s5WvI8RjmB_Gt1E9F4O88jx-qG3fGc8/exec';
 const SHEET_ID = '1NZ3RRvtKVWwyU1MJmPvh8xKxYdnXgGwwLUSHajtLnQQ';
 const BASE = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
 const SHEETS = {
@@ -1235,14 +1236,13 @@ async function deleteRow(sheetKey, rowIndex, label) {
   const startRow = SHEETS[sheetKey]?.startRow || 4;
   const actualRow = startRow + rowIndex;
   try {
-    const res = await fetch(BASE+'?fields=sheets.properties&key='+API_KEY);
-    const j = await res.json();
-    const sheet = j.sheets?.find(s => s.properties.title === sheetName);
-    const sheetId = sheet?.properties?.sheetId || 0;
-    await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+':batchUpdate?key='+API_KEY, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({requests:[{deleteDimension:{range:{sheetId,dimension:'ROWS',startIndex:actualRow-1,endIndex:actualRow}}}]})
+    const res = await fetch(WRITER_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({ adminKey:ADMIN_KEY, action:'delete', sheetName, actualRow })
     });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error || 'ไม่สามารถลบได้');
     await loadAllData();
   } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
 }
@@ -1435,7 +1435,6 @@ function closeModalDirect(){document.getElementById('modal-overlay').classList.r
 async function saveModal() {
   const modal = document.getElementById('modal');
   const isEditMode = modal.dataset.editMode === 'true';
-  // ดึง key จาก editKey (กรณี edit) หรือ modalCtx (กรณีเพิ่มใหม่)
   const activeKey = isEditMode ? modal.dataset.editKey : modalCtx;
   if (!activeKey) return;
   const inputs = document.querySelectorAll('#modal-body .form-input');
@@ -1445,22 +1444,23 @@ async function saveModal() {
   const btn = document.querySelector('#modal .btn:not(.btn-ghost)');
   if (btn) { btn.textContent = 'กำลังบันทึก…'; btn.disabled = true; }
   try {
+    let payload;
     if (isEditMode) {
       const startRow = SHEETS[activeKey]?.startRow || 4;
       const rowIndex = parseInt(modal.dataset.editRow);
       const actualRow = startRow + rowIndex;
-      await fetch(
-        BASE+'/values/'+encodeURIComponent(sheetName+'!A'+actualRow+':Z'+actualRow)+'?valueInputOption=USER_ENTERED&key='+API_KEY,
-        { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({values:[values]}) }
-      );
-      modal.dataset.editMode = 'false';
-      modal.dataset.editKey = '';
+      payload = { adminKey:ADMIN_KEY, action:'update', sheetName, values, actualRow };
     } else {
-      await fetch(
-        BASE+'/values/'+encodeURIComponent(sheetName)+':append?valueInputOption=USER_ENTERED&key='+API_KEY,
-        { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({values:[values]}) }
-      );
+      payload = { adminKey:ADMIN_KEY, action:'append', sheetName, values };
     }
+    const res = await fetch(WRITER_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error || 'ไม่สามารถบันทึกได้');
+    if (isEditMode) { modal.dataset.editMode='false'; modal.dataset.editKey=''; }
     closeModalDirect();
     await loadAllData();
   } catch(e) {
