@@ -2,13 +2,6 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="IT Portal">
-<meta name="theme-color" content="#0D1E35">
-<link rel="manifest" href="manifest.json">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IT Management Portal — ESL/TSC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1088,8 +1081,8 @@ body.is-admin .admin-bar { display: flex; }
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-ftr">
-      <button class="btn btn-ghost" onclick="closeModalDirect()">ยกเลิก</button>
-      <button class="btn" onclick="saveModal()">บันทึก</button>
+      <button class="btn btn-ghost" onclick="closeModalDirect()" id="modal-cancel-btn">ยกเลิก</button>
+      <button class="btn" onclick="saveModal()" id="modal-save-btn">บันทึก</button>
     </div>
   </div>
 </div>
@@ -1101,7 +1094,6 @@ document.querySelectorAll('#print-date').forEach(el => {
 });
 
 const API_KEY = 'AIzaSyCtqPec7cde2fZXHtvKv0FZsY8XYraduZk';
-const WRITER_URL = 'https://script.google.com/macros/s/AKfycbynbALDUlnqNEKmbDg_Azow1jtgae0kRJHG-s5WvI8RjmB_Gt1E9F4O88jx-qG3fGc8/exec';
 const SHEET_ID = '1NZ3RRvtKVWwyU1MJmPvh8xKxYdnXgGwwLUSHajtLnQQ';
 const BASE = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`;
 const SHEETS = {
@@ -1236,13 +1228,14 @@ async function deleteRow(sheetKey, rowIndex, label) {
   const startRow = SHEETS[sheetKey]?.startRow || 4;
   const actualRow = startRow + rowIndex;
   try {
-    const res = await fetch(WRITER_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'text/plain'},
-      body: JSON.stringify({ adminKey:ADMIN_KEY, action:'delete', sheetName, actualRow })
+    const res = await fetch(BASE+'?fields=sheets.properties&key='+API_KEY);
+    const j = await res.json();
+    const sheet = j.sheets?.find(s => s.properties.title === sheetName);
+    const sheetId = sheet?.properties?.sheetId || 0;
+    await fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SHEET_ID+':batchUpdate?key='+API_KEY, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({requests:[{deleteDimension:{range:{sheetId,dimension:'ROWS',startIndex:actualRow-1,endIndex:actualRow}}}]})
     });
-    const result = await res.json();
-    if (!result.success) throw new Error(result.error || 'ไม่สามารถลบได้');
     await loadAllData();
   } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
 }
@@ -1266,7 +1259,7 @@ function doDel(btn) {
   deleteRow(key,globalIdx,tmp?tmp.r[0]||'':'');
 }
 
-function renderTable(key,hId,bId,cols,filterFn,pgKey){
+function renderTable(key,hId,bId,cols,filterFn,pgKey,showDetails){
   const d=DATA[key];if(!d)return;
   let rows=d.rows.filter(r=>r.some(c=>c));
   if(filterFn)rows=filterFn(rows);
@@ -1275,7 +1268,8 @@ function renderTable(key,hId,bId,cols,filterFn,pgKey){
   const pg=paginations[pgKey]||1,total=rows.length,pages=Math.ceil(total/PG);
   const sl=rows.slice((pg-1)*PG,pg*PG);
   const adminCols = isAdmin ? '<th class="admin-only" style="width:80px">จัดการ</th>' : '';
-  document.getElementById(hId).innerHTML='<tr>'+cols.map(c=>'<th>'+(d.headers[c.idx]||c.label||'')+'</th>').join('')+adminCols+'</tr>';
+  const detailCol = showDetails ? '<th style="width:70px"></th>' : '';
+  document.getElementById(hId).innerHTML='<tr>'+cols.map(c=>'<th>'+(d.headers[c.idx]||c.label||'')+'</th>').join('')+detailCol+adminCols+'</tr>';
   document.getElementById(bId).innerHTML=sl.length
     ?sl.map((r,i)=>{
       const globalIdx=(pg-1)*PG+i;
@@ -1283,10 +1277,12 @@ function renderTable(key,hId,bId,cols,filterFn,pgKey){
       const rv=encodeURIComponent(JSON.stringify(r));
       const label=encodeURIComponent(r[0]||'');
       const adminCell=isAdmin?'<td class="admin-only"><button class="edit-btn" onclick="doEdit(this)">แก้ไข</button> <button class="del-btn" onclick="doDel(this)">ลบ</button></td>':'';
+      const detailCell = showDetails ? '<td><button class="edit-btn" onclick="doView(this)">รายละเอียด</button></td>' : '';
+      DATA._viewTmp=DATA._viewTmp||{};DATA._viewTmp[key+'_'+globalIdx]={h:d.headers,r:r};
       if(isAdmin){DATA._editTmp=DATA._editTmp||{};DATA._editTmp[key+'_'+globalIdx]={h:d.headers,r:r,key:key,idx:globalIdx};}
-      return '<tr>'+cols.map(c=>'<td class="'+(c.mono?'mono':'')+'">'+(c.render?c.render(r[c.idx]||'',r):(r[c.idx]||'—'))+'</td>').join('')+adminCell+'</tr>';
+      return '<tr>'+cols.map(c=>'<td class="'+(c.mono?'mono':'')+'">'+(c.render?c.render(r[c.idx]||'',r):(r[c.idx]||'—'))+'</td>').join('')+detailCell+adminCell+'</tr>';
     }).join('')
-    :'<tr><td colspan="'+(cols.length+(isAdmin?1:0))+'" class="empty">ไม่มีข้อมูล</td></tr>';
+    :'<tr><td colspan="'+(cols.length+(showDetails?1:0)+(isAdmin?1:0))+'" class="empty">ไม่มีข้อมูล</td></tr>';
   const pe=document.getElementById(`${key}-pg`);
   if(pe)pe.innerHTML=total>PG?`
     <span class="pg-info">${(pg-1)*PG+1}–${Math.min(pg*PG,total)} / ${total}</span>
@@ -1311,7 +1307,7 @@ function renderAssets(){
     {idx:3,label:'Brand/Model'},{idx:6,label:'IP',mono:true},{idx:7,label:'ผู้ใช้งาน'},
     {idx:8,label:'แผนก'},{idx:9,label:'Location'},{idx:10,label:'วันที่ซื้อ'},
     {idx:12,label:'สถานะ',render:v=>aBadge(v)},
-  ],r=>r.filter(row=>(!ft||row[2]===ft)&&(!fd||row[8]===fd)&&(!fs||row[12]===fs)),'assets');
+  ],r=>r.filter(row=>(!ft||row[2]===ft)&&(!fd||row[8]===fd)&&(!fs||row[12]===fs)),'assets',true);
 }
 function renderUsers(){
   const fd=document.getElementById('f-user-dept')?.value,fs=document.getElementById('f-user-status')?.value;
@@ -1431,42 +1427,65 @@ function openModal(type){
   document.getElementById('modal-overlay').classList.add('open');
 }
 function closeModal(e){if(e.target===document.getElementById('modal-overlay'))closeModalDirect();}
-function closeModalDirect(){document.getElementById('modal-overlay').classList.remove('open');}
+function closeModalDirect(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal-save-btn').style.display='';
+  document.getElementById('modal-cancel-btn').textContent='ยกเลิก';
+}
+// ── READ-ONLY DETAIL VIEW (ทุกคนดูได้ ไม่ต้อง admin) ─────────
+function viewDetails(sheetKey, rowIndex) {
+  const tmp = DATA._viewTmp && DATA._viewTmp[sheetKey+'_'+rowIndex];
+  if (!tmp) return;
+  const {h, r} = tmp;
+  document.getElementById('modal-title').textContent = 'รายละเอียดทั้งหมด';
+  document.getElementById('modal-body').innerHTML = '<div class="form-grid">'+
+    h.map((label,i)=> (r[i]!==undefined && r[i]!==null && r[i]!=='') ?
+      '<div class="form-group"><label class="form-label">'+label+'</label>'+
+      '<div class="form-input" style="background:var(--color-background-secondary);cursor:default;user-select:text">'+
+      String(r[i]).replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</div></div>' : '').join('')+
+  '</div>';
+  document.getElementById('modal-save-btn').style.display='none';
+  document.getElementById('modal-cancel-btn').textContent='ปิด';
+  document.getElementById('modal').dataset.editMode='false';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function doView(btn) {
+  const tbody = btn.closest('tbody');
+  const key = tbody.id.replace('-body','');
+  const rowIdx = Array.from(tbody.querySelectorAll('tr')).indexOf(btn.closest('tr'));
+  const pg = paginations[key]||1;
+  const globalIdx = (pg-1)*PG+rowIdx;
+  viewDetails(key, globalIdx);
+}
 async function saveModal() {
   const modal = document.getElementById('modal');
   const isEditMode = modal.dataset.editMode === 'true';
-  const activeKey = isEditMode ? modal.dataset.editKey : modalCtx;
-  if (!activeKey) return;
+  if (!modalCtx) return;
   const inputs = document.querySelectorAll('#modal-body .form-input');
   const values = Array.from(inputs).map(i => i.value);
-  const sheetName = SHEETS[activeKey]?.name;
+  const sheetName = SHEETS[modalCtx]?.name;
   if (!sheetName) return;
   const btn = document.querySelector('#modal .btn:not(.btn-ghost)');
-  if (btn) { btn.textContent = 'กำลังบันทึก…'; btn.disabled = true; }
+  btn.textContent = 'กำลังบันทึก…'; btn.disabled = true;
   try {
-    let payload;
     if (isEditMode) {
-      const startRow = SHEETS[activeKey]?.startRow || 4;
+      const startRow = SHEETS[modalCtx]?.startRow || 4;
       const rowIndex = parseInt(modal.dataset.editRow);
       const actualRow = startRow + rowIndex;
-      payload = { adminKey:ADMIN_KEY, action:'update', sheetName, values, actualRow };
+      await fetch(
+        `${BASE}/values/${encodeURIComponent(sheetName+'!A'+actualRow+':Z'+actualRow)}?valueInputOption=USER_ENTERED&key=${API_KEY}`,
+        { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({values:[values]}) }
+      );
+      modal.dataset.editMode = 'false';
     } else {
-      payload = { adminKey:ADMIN_KEY, action:'append', sheetName, values };
+      await fetch(
+        `${BASE}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=USER_ENTERED&key=${API_KEY}`,
+        { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({values:[values]}) }
+      );
     }
-    const res = await fetch(WRITER_URL, {
-      method: 'POST',
-      headers: {'Content-Type':'text/plain'},
-      body: JSON.stringify(payload)
-    });
-    const result = await res.json();
-    if (!result.success) throw new Error(result.error || 'ไม่สามารถบันทึกได้');
-    if (isEditMode) { modal.dataset.editMode='false'; modal.dataset.editKey=''; }
     closeModalDirect();
     await loadAllData();
-  } catch(e) {
-    if (btn) { btn.textContent = 'บันทึก'; btn.disabled = false; }
-    alert('เกิดข้อผิดพลาด: '+e.message);
-  }
+  } catch(e) { alert('เกิดข้อผิดพลาด: '+e.message); }
 }
 
 // ── MOBILE NAV ───────────────────────────────────────────────
@@ -1500,11 +1519,6 @@ function syncMobNav(n) {
   document.getElementById('app').style.display='flex';
 })();
 
-
-// ── SERVICE WORKER (PWA) ─────────────────────────────────────
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(()=>{});
-}
 </script>
 </body>
 </html>
