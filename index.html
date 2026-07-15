@@ -1113,11 +1113,11 @@ let DATA={},paginations={},modalCtx=null;
 const PG=20;
 
 async function fetchSheet(n,r){
-  const res=await fetch(`${BASE}/values/${encodeURIComponent(n+'!A'+r+':Z2000')}?key=${API_KEY}`);
+  const res=await fetch(`${BASE}/values/${encodeURIComponent(n+'!A'+r+':AZ2000')}?key=${API_KEY}`);
   const j=await res.json();return j.values||[];
 }
 async function fetchHeaders(n,r){
-  const res=await fetch(`${BASE}/values/${encodeURIComponent(n+'!A'+r+':Z'+r)}?key=${API_KEY}`);
+  const res=await fetch(`${BASE}/values/${encodeURIComponent(n+'!A'+r+':AZ'+r)}?key=${API_KEY}`);
   const j=await res.json();return(j.values&&j.values[0])||[];
 }
 async function loadAllData(){
@@ -1473,7 +1473,7 @@ async function saveModal() {
       const rowIndex = parseInt(modal.dataset.editRow);
       const actualRow = startRow + rowIndex;
       await fetch(
-        `${BASE}/values/${encodeURIComponent(sheetName+'!A'+actualRow+':Z'+actualRow)}?valueInputOption=USER_ENTERED&key=${API_KEY}`,
+        `${BASE}/values/${encodeURIComponent(sheetName+'!A'+actualRow+':AZ'+actualRow)}?valueInputOption=USER_ENTERED&key=${API_KEY}`,
         { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({values:[values]}) }
       );
       modal.dataset.editMode = 'false';
