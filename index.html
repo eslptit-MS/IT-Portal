@@ -1218,7 +1218,10 @@ async function editRow(sheetKey, rowIndex, headers, rowData) {
   modal.dataset.editKey = sheetKey;
   modal.dataset.editRow = rowIndex;
   document.getElementById('modal-overlay').classList.add('open');
-  // Set modalCtx globally
+  // Set modalCtx globally (bug fix: saveModal() reads the top-level `modalCtx`
+  // variable, not `window._modalCtx` — the old code set the wrong one, so
+  // clicking "บันทึก" after Edit silently did nothing)
+  modalCtx = sheetKey;
   window._modalCtx = sheetKey;
 }
 
